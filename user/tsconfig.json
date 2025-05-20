@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "es2016",
+    "module": "commonjs",
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "outDir": "./dist",                     // Nơi chứa file JavaScript sau khi build
+    "rootDir": "./src",                     // Nơi chứa mã nguồn TypeScript
+    "moduleResolution": "node",             // Dùng hệ thống module của Node.js
+    "resolveJsonModule": true               // Cho phép import file .json
+  },
+  "include": ["src"],                        // Biên dịch toàn bộ file trong thư mục src
+  "exclude": ["node_modules", "dist"]        // Loại trừ những thư mục không cần biên dịch
+}
