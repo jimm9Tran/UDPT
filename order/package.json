@@ -20,13 +20,14 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@thasup-dev/common": "^1.0.37",
+    "@jimm9tran/common": "^1.0.0",
     "cookie-session": "^2.1.0",
     "cross-env": "^7.0.3",
     "express": "^4.21.2",
     "express-async-errors": "^3.1.1",
     "express-validator": "^7.2.1",
     "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.16.0",
     "mongoose": "^8.15.0",
     "mongoose-update-if-current": "^1.4.0",
     "node-nats-streaming": "^0.3.2"

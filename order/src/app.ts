@@ -1,8 +1,10 @@
 import express from 'express';
 import { json } from 'body-parser';
+import cookieSession from 'cookie-session';
+import { NotFoundError, errorHandler, currentUser } from '@jimm9tran/common';
 import { natsWrapper } from './NatsWrapper';
 import { OrderCreatedPublisher } from './events/publishers/OrderCreatedPublisher';
-import { OrderStatus } from './enums/order-status.enum';
+import { OrderStatus } from '@jimm9tran/common';
 
 const app = express();
 app.use(json());

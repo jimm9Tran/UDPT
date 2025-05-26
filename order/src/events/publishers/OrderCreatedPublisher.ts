@@ -1,7 +1,4 @@
-// src/publishers/OrderCreatedPublisher.ts
-import { Publisher } from '../Publisher';
-import type { OrderCreatedEvent } from '../types/OrderCreatedEvent';
-import { Subjects } from '../Subjects';
+import { Publisher, type OrderCreatedEvent, Subjects } from '@jimm9tran/common';
 
 export class OrderCreatedPublisher extends Publisher<OrderCreatedEvent> {
   subject: Subjects.OrderCreated = Subjects.OrderCreated;

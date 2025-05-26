@@ -1,11 +1,8 @@
 import express, { type Request, type Response } from 'express';
 import { body } from 'express-validator';
-// import {
-//   NotFoundError,
-//   OrderStatus,
-//   requireAuth,
-//   validateRequest
-// } from '@thasup-dev/common';
+import { validateRequest } from '../middleware/validateRequest';
+import '../types/current-user';
+
 import { requireAuth } from '../middleware/requireAuth';
 import { NotFoundError } from '../errors/NotFoundError';
 import { OrderStatus } from '../enums/order-status.enum';
