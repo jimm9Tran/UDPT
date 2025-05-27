@@ -3,7 +3,7 @@
 import mongoose from 'mongoose';
 import { updateIfCurrentPlugin } from 'mongoose-update-if-current';
 
-import type { ProductAttrs, ProductDoc, ProductModel } from '../types/product';
+import type { ProductAttrs, ProductDoc, ProductModel } from '../routes/types/product';
 import { reviewSchema } from './review';
 
 const productSchema = new mongoose.Schema<ProductDoc, ProductModel>(
