@@ -1,5 +1,5 @@
 import type mongoose from 'mongoose';
-import { type OrderStatus } from '../enums/order-status.enum';
+import { type OrderStatus } from '@jimm9tran/common';
 
 export interface CartAttrs {
   userId: string
@@ -21,7 +21,8 @@ export interface ShippingAddressAttrs {
   country: string
 }
 
-// Một interface mô tả các thuộc tính cần thiết để tạo một Đơn hàng mới
+// An interface that describes the properties
+// that are requried to create a new Order
 export interface OrderAttrs {
   userId: string
   status: OrderStatus
@@ -39,12 +40,14 @@ export interface OrderAttrs {
   deliveredAt?: Date
 }
 
-// Một interface mô tả các thuộc tính mà một Model Đơn hàng có
+// An interface that describes the properties
+// that a Order Model has
 export interface OrderModel extends mongoose.Model<OrderDoc> {
   build: (attrs: OrderAttrs) => OrderDoc
 }
 
-// Một interface mô tả các thuộc tính mà một Docs Đơn hàng có
+// An interface that describes the properties
+// that a Order Document has
 export interface OrderDoc extends mongoose.Document {
   userId: string
   status: OrderStatus

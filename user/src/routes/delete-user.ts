@@ -1,6 +1,8 @@
+// src/routes/delete-user.ts
+
 import express, { type Request, type Response } from 'express';
 import { param } from 'express-validator';
-import { NotFoundError, validateRequest } from '@thasup-dev/common';
+import { NotFoundError, validateRequest } from '@jimm9tran/common';
 
 import { User } from '../models/user';
 

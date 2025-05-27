@@ -1,5 +1,5 @@
 import express, { type Request, type Response } from 'express';
-import { NotFoundError } from '@thasup-dev/common';
+import { NotFoundError } from '@jimm9tran/common';
 
 import { User } from '../models/user';
 

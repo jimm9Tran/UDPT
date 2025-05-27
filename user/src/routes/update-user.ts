@@ -1,3 +1,5 @@
+// src/routes
+
 import express, { type Request, type Response } from 'express';
 import { param, body } from 'express-validator';
 import jwt from 'jsonwebtoken';
@@ -5,7 +7,7 @@ import {
   validateRequest,
   NotFoundError,
   BadRequestError
-} from '@thasup-dev/common';
+} from '@jimm9tran/common';
 
 import { User } from '../models/user';
 import { Password } from '../services/Password';

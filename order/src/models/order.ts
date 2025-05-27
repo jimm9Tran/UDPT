@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { updateIfCurrentPlugin } from 'mongoose-update-if-current';
-import { OrderStatus } from '../enums/order-status.enum';
+import { OrderStatus } from '@jimm9tran/common';
 
 import type { OrderAttrs, OrderDoc, OrderModel } from '../types/order';
 

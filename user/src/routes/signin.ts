@@ -1,7 +1,7 @@
 import express, { type Request, type Response } from 'express';
 import { body } from 'express-validator';
 import jwt from 'jsonwebtoken';
-import { validateRequest, BadRequestError } from '@thasup-dev/common';
+import { validateRequest, BadRequestError } from '@jimm9tran/common';
 
 import { User } from '../models/user';
 import { Password } from '../services/Password';

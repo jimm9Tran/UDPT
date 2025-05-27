@@ -1,40 +1,62 @@
-import 'dotenv/config';
 import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+dotenv.config();
+
+
 import { app } from './app';
 import { natsWrapper } from './NatsWrapper';
+import { ProductCreatedListener } from '../src/events/listeners/ProductCreatedListener';
+import { ProductUpdatedListener } from '../src/events/listeners/ProductUpdatedListener';
+import { ExpirationCompletedListener } from './events/listeners/ExpirationCompletedListener';
+import { PaymentCreatedListener } from './events/listeners/PaymentCreatedListener';
 
-const start = async () => {
-  // 1. Kiểm tra biến môi trường
-  const { NATS_CLUSTER_ID, NATS_CLIENT_ID, NATS_URL, MONGO_URI } = process.env;
-  if (!NATS_CLUSTER_ID || !NATS_CLIENT_ID || !NATS_URL) {
-    throw new Error('Missing NATS configuration in .env');
+const start = async (): Promise<void> => {
+  console.log('Starting...');
+  if (process.env.JWT_KEY == null) {
+    throw new Error('JWT_KEY must be defined');
   }
-  if (!MONGO_URI) {
-    throw new Error('Missing MONGO_URI in .env');
+  if (process.env.MONGO_URI_ORDER == null) {
+    throw new Error('MONGO_URI_ORDER must be defined');
+  }
+  if (process.env.NATS_CLIENT_ID == null) {
+    throw new Error('NATS_CLIENT_ID must be defined');
+  }
+  if (process.env.NATS_URL == null) {
+    throw new Error('NATS_URL must be defined');
+  }
+  if (process.env.NATS_CLUSTER_ID == null) {
+    throw new Error('NATS_CLUSTER_ID must be defined');
   }
 
-  // 2. Kết nối tới NATS Streaming
-  await natsWrapper.connect(NATS_CLUSTER_ID, NATS_CLIENT_ID, NATS_URL);
-  // Đóng kết nối gọn gàng khi process bị kill
-  natsWrapper.client.on('close', () => {
-    console.log('🔴 NATS connection closed!');
-    process.exit();
-  });
-  process.on('SIGINT', () => natsWrapper.client.close());
-  process.on('SIGTERM', () => natsWrapper.client.close());
+  try {
+    await natsWrapper.connect(
+      process.env.NATS_CLUSTER_ID,
+      process.env.NATS_CLIENT_ID,
+      process.env.NATS_URL
+    );
 
-  // 3. Kết nối MongoDB
-  await mongoose.connect(MONGO_URI);
-  console.log('🟢 Connected to MongoDB');
+    natsWrapper.client.on('close', () => {
+      console.log('NATS connection closed!');
+      process.exit();
+    });
 
-  // 4. Khởi server Express
-  const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => {
-    console.log(`⚡️ Server listening on port ${PORT}`);
+    process.on('SIGINT', () => { natsWrapper.client.close(); });
+    process.on('SIGTERM', () => { natsWrapper.client.close(); });
+
+    new ProductCreatedListener(natsWrapper.client).listen();
+    new ProductUpdatedListener(natsWrapper.client).listen();
+    new ExpirationCompletedListener(natsWrapper.client).listen();
+    new PaymentCreatedListener(natsWrapper.client).listen();
+
+    await mongoose.connect(process.env.MONGO_URI_ORDER);
+    console.log('Connected to MongoDB');
+  } catch (err) {
+    console.error(err);
+  }
+  const port = 3000;
+  app.listen(port, () => {
+    console.log(`Order server: Listening on port ${port}`);
   });
 };
 
-start().catch(err => {
-  console.error(err);
-  process.exit(1);
-});
+void start();

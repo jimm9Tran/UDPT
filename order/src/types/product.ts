@@ -1,6 +1,7 @@
 import type mongoose from 'mongoose';
 
-// Một interface mô tả các thuộc tính cần thiết để tạo một Sản phẩm mới
+// An interface that describes the properties
+// that are requried to create a new Product
 export interface ProductAttrs {
   id: string
   title: string
@@ -15,7 +16,8 @@ export interface ProductAttrs {
   isReserved: boolean
 }
 
-// Một interface mô tả các thuộc tính mà một Model Sản phẩm có
+// An interface that describes the properties
+// that a Product Model has
 export interface ProductModel extends mongoose.Model<ProductDoc> {
   build: (attrs: ProductAttrs) => ProductDoc
   findByEvent: (event: {
@@ -24,7 +26,8 @@ export interface ProductModel extends mongoose.Model<ProductDoc> {
   }) => Promise<ProductDoc | null>
 }
 
-// Một interface mô tả các thuộc tính mà một Tài liệu Sản phẩm có
+// An interface that describes the properties
+// that a Product Document has
 export interface ProductDoc extends mongoose.Document {
   title: string
   price: number
