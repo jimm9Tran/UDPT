@@ -17,7 +17,9 @@ app.use(express.json());
 app.use(
   cookieSession({
     signed: false,
-    secure: process.env.NODE_ENV === 'production'
+    // secure: process.env.NODE_ENV === 'production'
+    secure: false, // For local development, set to false
+    httpOnly: true,
   })
 );
 

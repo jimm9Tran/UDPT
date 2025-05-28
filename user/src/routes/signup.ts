@@ -11,14 +11,14 @@ const router = express.Router();
 router.post(
   '/api/users/signup',
   [
-    body('email').isEmail().withMessage('Email must be valid'),
+    body('email').isEmail().withMessage('Email không hợp lệ'),
     body('password')
       .trim()
       .isLength({ min: 4, max: 20 })
-      .withMessage('Password must be between 4 and 20 characters'),
-    body('name').not().isEmpty().withMessage('Name is required'),
-    body('gender').not().isEmpty().withMessage('Gender is required'),
-    body('age').isInt({ gt: 0 }).withMessage('Age must be a positive integer')
+      .withMessage('Mật khẩu phải từ 4 đến 20 ký tự'),
+    body('name').not().isEmpty().withMessage('Tên không được để trống'),
+    body('gender').not().isEmpty().withMessage('Giới tính không được để trống'),
+    body('age').isInt({ gt: 0 }).withMessage('Tuổi phải lớn hơn 0'),
   ],
   validateRequest,
   async (req: Request, res: Response) => {
@@ -38,7 +38,7 @@ router.post(
       // Check if user exists
       const existingUser = await User.findOne({ email });
       if (existingUser) {
-        throw new BadRequestError('Email already in use');
+        throw new BadRequestError('Email này đã được sử dụng');
       }
 
       // Use a default placeholder image if none provided

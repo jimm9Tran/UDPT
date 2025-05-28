@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # --- CSDL MongoDB ---
+  mongo:
+    image: mongo:6
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "27017:27017"
+
+  # --- NATS Streaming ---
+  nats:
+    image: nats-streaming:latest
+    restart: unless-stopped
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+
+  # --- User Service ---
+  user-service:
+    build:
+      context: ./user
+      dockerfile: Dockerfile
+    command: npm run start
+    environment:
+      - PORT=3000
+      - MONGO_URI_USER=${MONGO_URI_USER}
+      - JWT_KEY=${JWT_KEY}
+      - NATS_CLUSTER_ID=${NATS_CLUSTER_ID}
+      - NATS_CLIENT_ID=${NATS_CLIENT_ID}_user
+      - NATS_URL=${NATS_URL}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongo
+      - nats
+
+  # --- Product Service ---
+  product-service:
+    build:
+      context: ./product
+      dockerfile: Dockerfile
+    command: npm run start
+    environment:
+      - PORT=3001
+      - MONGO_URI_PRODUCT=${MONGO_URI_PRODUCT}
+      - NATS_CLUSTER_ID=${NATS_CLUSTER_ID}
+      - NATS_CLIENT_ID=${NATS_CLIENT_ID}_product
+      - NATS_URL=${NATS_URL}
+      - JWT_KEY=${JWT_KEY}
+    ports:
+      - "3001:3000"
+    depends_on:
+      - mongo
+      - nats
+
+  # --- Order Service ---
+  order-service:
+    build:
+      context: ./order
+      dockerfile: Dockerfile
+    command: npm run start
+    environment:
+      - PORT=3002
+      - MONGO_URI_ORDER=${MONGO_URI_ORDER}
+      - NATS_CLUSTER_ID=${NATS_CLUSTER_ID}
+      - NATS_CLIENT_ID=${NATS_CLIENT_ID}_order
+      - NATS_URL=${NATS_URL}
+      - JWT_KEY=${JWT_KEY}
+    ports:
+      - "3002:3000"
+    depends_on:
+      - mongo
+      - nats
+
+volumes:
+  mongo-data:

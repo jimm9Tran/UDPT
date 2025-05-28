@@ -24,15 +24,15 @@ router.post(
     body('cart')
       .not()
       .isEmpty()
-      .withMessage('CartItems must be provided'),
+      .withMessage('Giỏ hàng không được để trống'),
     body('shippingAddress')
       .not()
       .isEmpty()
-      .withMessage('Shipping Address must be provided'),
+      .withMessage('Địa chỉ giao hàng không được để trống'),
     body('paymentMethod')
       .not()
       .isEmpty()
-      .withMessage('Payment Method must be provided')
+      .withMessage('Phương thức thanh toán không được để trống')
   ],
   validateRequest,
   async (req: Request, res: Response) => {
@@ -43,9 +43,9 @@ router.post(
     expiration.setSeconds(expiration.getSeconds() + EXPIRATION_WINDOW_SECONDS);
 
     if (cart == null) {
-      throw new Error('cart is empty');
+      throw new Error('Giỏ hàng đang trống');
     } else if (paymentMethod == null) {
-      throw new Error('payment method is not provide');
+      throw new Error('Bạn chưa chọn phương thức thanh toán');
     }
 
     // Find reserve product in cart
@@ -61,7 +61,7 @@ router.post(
 
       // If reservedProduct existed, throw an error
       if (reservedProduct?.length > 0) {
-        throw new Error(`${cart[i].title} is already reserved`);
+        throw new Error(`${cart[i].title} đã được đặt trước, không thể mua tiếp`);
       }
 
       // If existedProduct DO NOT existed, throw an error

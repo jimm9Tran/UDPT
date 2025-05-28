@@ -14,19 +14,20 @@ const router = express.Router();
 router.get(
   '/api/orders/:orderId',
   requireAuth,
-  [param('orderId').isMongoId().withMessage('Invalid MongoDB ObjectId')],
+  [param('orderId').isMongoId().withMessage('Id đơn hàng không hợp lệ')], // Kiểm tra orderId hợp lệ
   validateRequest,
   async (req: Request, res: Response) => {
     const { orderId } = req.params;
 
+    // Tìm đơn hàng theo id
     const order = await Order.findById(orderId);
 
+    // Nếu không tìm thấy đơn hàng thì báo lỗi
     if (order == null) {
       throw new NotFoundError();
     }
 
-    // Only admin *OR* the user who request that order
-    // can get an access to the order
+    // Chỉ admin hoặc chính chủ đơn hàng mới được truy cập đơn hàng này
     if (
       order.userId !== req.currentUser!.id &&
       !req.currentUser!.isAdmin
@@ -34,6 +35,7 @@ router.get(
       throw new NotAuthorizedError();
     }
 
+    // Trả về thông tin đơn hàng
     res.status(200).send(order);
   }
 );

@@ -5,9 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "cross-env NODE_ENV=development nodemon --legacy-watch ./src/index.ts",
-    "prod": "cross-env NODE_ENV=production nodemon --legacy-watch ./src/index.ts",
-    "test": "cross-env NODE_ENV=development jest --watchAll --no-cache",
-    "test:ci": "cross-env NODE_ENV=development jest"
+    "prod": "cross-env NODE_ENV=production nodemon --legacy-watch ./src/index.ts"
   },
   "jest": {
     "preset": "ts-jest",

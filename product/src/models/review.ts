@@ -1,7 +1,7 @@
 // src/models/review.ts
 
 import mongoose from 'mongoose';
-import type { ReviewAttrs, ReviewDoc, ReviewModel } from '../routes/types/review';
+import type { ReviewAttrs, ReviewDoc, ReviewModel } from '../types/review';
 
 export const reviewSchema = new mongoose.Schema<ReviewDoc, ReviewModel>(
   {
