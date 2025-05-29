@@ -98,5 +98,29 @@ services:
       - mongo
       - nats
 
+  # --- Payment Service ---
+  payment-service:
+    build:
+      context: ./payment
+      dockerfile: Dockerfile
+    command: npm run start
+    environment:
+      - PORT=3003
+      - MONGO_URI_PAYMENT=${MONGO_URI_PAYMENT}
+      - NATS_CLUSTER_ID=${NATS_CLUSTER_ID}
+      - NATS_CLIENT_ID=${NATS_CLIENT_ID}_payment
+      - NATS_URL=${NATS_URL}
+      - JWT_KEY=${JWT_KEY}
+      - VNPAY_TMN_CODE=${VNPAY_TMN_CODE}
+      - VNPAY_HASH_SECRET=${VNPAY_HASH_SECRET}
+      - VNPAY_URL=${VNPAY_URL}
+      - VNPAY_RETURN_URL=${VNPAY_RETURN_URL}
+      - CLIENT_URL=${CLIENT_URL}
+    ports:
+      - "3003:3000"
+    depends_on:
+      - mongo
+      - nats
+
 volumes:
   mongo-data:
