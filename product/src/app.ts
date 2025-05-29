@@ -10,6 +10,7 @@ import { getAllProductsRouter } from './routes/get-all-products';
 import { getProductRouter } from './routes/get-product';
 import { deleteProductRouter } from './routes/delete-product';
 import { updateProductRouter } from './routes/update-product';
+import { bestsellerRouter } from './routes/bestseller';
 
 const app = express();
 app.use(json());
@@ -30,6 +31,7 @@ app.use(getAllProductsRouter)
 app.use(getProductRouter);
 app.use(deleteProductRouter);
 app.use(updateProductRouter);
+app.use(bestsellerRouter)
 
 // Xử lý lỗi 404 cho các route không tồn tại
 app.all('*', async (req, res) => {

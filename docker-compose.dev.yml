@@ -18,6 +18,29 @@ services:
       - "4222:4222"
       - "8222:8222"
 
+  # --- Redis ---
+  redis:
+    image: redis:latest
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  # --- Expiration Service ---
+  expiration-service:
+    build:
+      context: ./expiration
+      dockerfile: Dockerfile
+    command: npm run start
+    environment:
+      - NATS_CLUSTER_ID=${NATS_CLUSTER_ID}
+      - NATS_CLIENT_ID=${NATS_CLIENT_ID}_expiration
+      - NATS_URL=${NATS_URL}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - nats
+      - redis
+
   # --- User Service ---
   user-service:
     build:
