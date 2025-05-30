@@ -3,7 +3,7 @@
 import mongoose from 'mongoose';
 import { updateIfCurrentPlugin } from 'mongoose-update-if-current';
 import type { PaymentAttrs, PaymentDoc, PaymentModel } from '../types/payment';
-import { PaymentStatus } from '../types/payment';
+import { PaymentStatus, PaymentMethod } from '../types/payment';
 
 const paymentSchema = new mongoose.Schema<PaymentDoc, PaymentModel>(
   {
@@ -13,12 +13,12 @@ const paymentSchema = new mongoose.Schema<PaymentDoc, PaymentModel>(
     },
     stripeId: {
       type: String,
-      required: true
+      required: false // Not required for COD
     },
     vnpayTxnRef: {
       type: String,
-      required: true,
-      unique: true
+      required: false, // Not required for COD
+      sparse: true // Allow multiple null values
     },
     vnpayTransactionNo: {
       type: String,
@@ -37,7 +37,8 @@ const paymentSchema = new mongoose.Schema<PaymentDoc, PaymentModel>(
     paymentMethod: {
       type: String,
       required: true,
-      default: 'VNPay'
+      enum: Object.values(PaymentMethod),
+      default: PaymentMethod.VNPay
     },
     status: {
       type: String,
@@ -60,6 +61,14 @@ const paymentSchema = new mongoose.Schema<PaymentDoc, PaymentModel>(
     paidAt: {
       type: Date,
       required: false
+    },
+    deliveryAddress: {
+      type: String,
+      required: false // For COD payments
+    },
+    phoneNumber: {
+      type: String,
+      required: false // For COD payments
     }
   },
   {

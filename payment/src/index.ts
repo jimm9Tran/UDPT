@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 import { app } from './app';
 import { natsWrapper } from './NatsWrapper';
 import { OrderCreatedListener } from './events/listeners/OrderCreatedListener';
-import { OrderCancelledListener } from './events/listeners/OrderCancelledListener';
+import { OrderUpdatedListener } from './events/listeners/OrderUpdatedListener';
 
 const start = async (): Promise<void> => {
   console.log('Khởi động Payment Service...');
@@ -13,8 +13,8 @@ const start = async (): Promise<void> => {
   if (process.env.JWT_KEY == null) {
     throw new Error('JWT_KEY must be defined');
   }
-  if (process.env.MONGO_URI == null) {
-    throw new Error('MONGO_URI must be defined');
+  if (process.env.MONGO_URI_PAYMENT == null) {
+    throw new Error('MONGO_URI_PAYMENT must be defined');
   }
   if (process.env.NATS_CLIENT_ID == null) {
     throw new Error('NATS_CLIENT_ID must be defined');
@@ -56,10 +56,10 @@ const start = async (): Promise<void> => {
 
     // Khởi tạo các event listeners
     new OrderCreatedListener(natsWrapper.client).listen();
-    new OrderCancelledListener(natsWrapper.client).listen();
+    new OrderUpdatedListener(natsWrapper.client).listen();
 
     // Kết nối tới MongoDB
-    await mongoose.connect(process.env.MONGO_URI);
+    await mongoose.connect(process.env.MONGO_URI_PAYMENT!);
     console.log('Đã kết nối tới MongoDB');
   } catch (err) {
     console.error(err);

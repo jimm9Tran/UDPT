@@ -6,7 +6,7 @@ import mongoose from 'mongoose';
 import { app } from './app';
 import { OrderUpdatedListener } from './events/listeners/OrderUpdatedListener';
 import { OrderCreatedListener } from './events/listeners/OrderCreatedListener';
-import { natsWrapper } from './NatWapper';
+import { natsWrapper } from './NatsWrapper';
 
 const start = async (): Promise<void> => {
   console.log('Starting...');

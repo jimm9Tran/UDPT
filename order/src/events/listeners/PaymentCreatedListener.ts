@@ -27,9 +27,7 @@ export class PaymentCreatedListener extends Listener<PaymentCreatedEvent> {
       isPaid: true,
       paidAt: new Date()
     });
-    await order.save();
-
-    // publishing an event saying this was cancelled!
+    await order.save();    // publishing an event saying this order was completed!
     await new OrderUpdatedPublisher(natsWrapper.client).publish({
       id: order.id,
       status: OrderStatus.Completed,

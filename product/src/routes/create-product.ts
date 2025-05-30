@@ -6,7 +6,7 @@ import { adminUser, requireAuth, validateRequest } from '@jimm9tran/common';
 
 import { Product } from '../models/product';
 import { ProductCreatedPublisher } from '../events/publishers/ProductCreatedPublisher';
-import { natsWrapper } from '../NatWapper';
+import { natsWrapper } from '../NatsWrapper';
 import type { ProductAttrs } from '../types/product';
 
 const router = express.Router();

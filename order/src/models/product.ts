@@ -35,11 +35,13 @@ const productSchema = new mongoose.Schema<ProductDoc, ProductModel>(
       type: Number,
       required: true,
       default: 0
-    },
-    isReserved: {
+    },    isReserved: {
       type: Boolean,
       required: true,
       default: false
+    },
+    orderId: {
+      type: String
     }
   },
   {

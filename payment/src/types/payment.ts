@@ -5,17 +5,19 @@ import type mongoose from 'mongoose';
 // Một interface mô tả các thuộc tính cần thiết để tạo một Payment mới
 export interface PaymentAttrs {
   orderId: string;
-  stripeId: string;
-  vnpayTxnRef: string;
+  stripeId?: string; // Optional for COD
+  vnpayTxnRef?: string; // Optional for COD
   vnpayTransactionNo?: string;
   amount: number;
   currency: string;
-  paymentMethod: string;
+  paymentMethod: PaymentMethod;
   status: PaymentStatus;
   vnpayResponseCode?: string;
   vnpayBankCode?: string;
   vnpayCardType?: string;
   paidAt?: Date;
+  deliveryAddress?: string; // For COD payments
+  phoneNumber?: string; // For COD payments
 }
 
 // Một interface mô tả các thuộc tính mà một Payment Model có
@@ -26,17 +28,19 @@ export interface PaymentModel extends mongoose.Model<PaymentDoc> {
 // Một interface mô tả các thuộc tính mà một Payment Document có
 export interface PaymentDoc extends mongoose.Document {
   orderId: string;
-  stripeId: string;
-  vnpayTxnRef: string;
+  stripeId?: string; // Optional for COD
+  vnpayTxnRef?: string; // Optional for COD
   vnpayTransactionNo?: string;
   amount: number;
   currency: string;
-  paymentMethod: string;
+  paymentMethod: PaymentMethod;
   status: PaymentStatus;
   vnpayResponseCode?: string;
   vnpayBankCode?: string;
   vnpayCardType?: string;
   paidAt?: Date;
+  deliveryAddress?: string; // For COD payments
+  phoneNumber?: string; // For COD payments
   version: number;
   createdAt: string;
   updatedAt: string;
@@ -47,7 +51,15 @@ export enum PaymentStatus {
   Pending = 'pending',
   Success = 'success',
   Failed = 'failed',
-  Cancelled = 'cancelled'
+  Cancelled = 'cancelled',
+  AwaitingDelivery = 'awaiting_delivery' // For COD payments
+}
+
+// Enum cho phương thức thanh toán
+export enum PaymentMethod {
+  VNPay = 'VNPay',
+  COD = 'COD', // Cash on Delivery
+  Stripe = 'Stripe'
 }
 
 // Interface cho VNPay request

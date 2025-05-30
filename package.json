@@ -1,0 +1,47 @@
+{
+  "name": "ecommerce-microservices",
+  "version": "1.0.0",
+  "description": "E-commerce system built with microservices architecture",
+  "scripts": {
+    "setup": "./setup.sh",
+    "start": "docker-compose -f docker-compose.dev.yml up --build",
+    "start:detached": "docker-compose -f docker-compose.dev.yml up --build -d",
+    "stop": "docker-compose -f docker-compose.dev.yml down",
+    "stop:volumes": "docker-compose -f docker-compose.dev.yml down -v",
+    "logs": "docker-compose -f docker-compose.dev.yml logs -f",
+    "logs:frontend": "docker-compose -f docker-compose.dev.yml logs -f frontend",
+    "logs:gateway": "docker-compose -f docker-compose.dev.yml logs -f api-gateway",
+    "logs:user": "docker-compose -f docker-compose.dev.yml logs -f user-service",
+    "logs:product": "docker-compose -f docker-compose.dev.yml logs -f product-service",
+    "logs:order": "docker-compose -f docker-compose.dev.yml logs -f order-service",
+    "logs:payment": "docker-compose -f docker-compose.dev.yml logs -f payment-service",
+    "restart": "docker-compose -f docker-compose.dev.yml restart",
+    "restart:frontend": "docker-compose -f docker-compose.dev.yml restart frontend",
+    "restart:gateway": "docker-compose -f docker-compose.dev.yml restart api-gateway",
+    "ps": "docker-compose -f docker-compose.dev.yml ps",
+    "clean": "docker system prune -a",
+    "dev:infrastructure": "docker-compose -f docker-compose.dev.yml up mongo nats redis",
+    "dev:frontend": "cd frontend && npm start",
+    "dev:gateway": "cd api-gateway && npm run dev",
+    "install:all": "npm run install:frontend && npm run install:gateway && npm run install:services",
+    "install:frontend": "cd frontend && npm install",
+    "install:gateway": "cd api-gateway && npm install",
+    "install:services": "cd user && npm install && cd ../product && npm install && cd ../order && npm install && cd ../payment && npm install && cd ../expiration && npm install",
+    "test:api": "curl http://localhost:4000/api/health",
+    "test:frontend": "curl http://localhost:3000"
+  },
+  "keywords": [
+    "microservices",
+    "ecommerce",
+    "react",
+    "nodejs",
+    "mongodb",
+    "nats",
+    "docker"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

@@ -1,18 +1,24 @@
-// src/events/listeners/OrderCancelledListener.ts
+// src/events/listeners/OrderUpdatedListener.ts
 
-import { Listener, type OrderCancelledEvent, Subjects, QueueGroupNames } from '@jimm9tran/common';
+import { Listener, type OrderUpdatedEvent, Subjects, QueueGroupNames } from '@jimm9tran/common';
 import { type Message } from 'node-nats-streaming';
 import { Payment } from '../../models/payment';
 import { PaymentStatus } from '../../types/payment';
 
-export class OrderCancelledListener extends Listener<OrderCancelledEvent> {
-  // Định nghĩa subject mà listener này sẽ lắng nghe (OrderCancelled)
-  subject: Subjects.OrderCancelled = Subjects.OrderCancelled;
+export class OrderUpdatedListener extends Listener<OrderUpdatedEvent> {
+  // Định nghĩa subject mà listener này sẽ lắng nghe (OrderUpdated)
+  subject: Subjects.OrderUpdated = Subjects.OrderUpdated;
   // Đặt tên group cho listener này để load balancing giữa các instance
   queueGroupName = QueueGroupNames.PAYMENT_SERVICE;
 
-  // Hàm xử lý khi nhận được sự kiện OrderCancelled
-  async onMessage (data: OrderCancelledEvent['data'], msg: Message): Promise<void> {
+  // Hàm xử lý khi nhận được sự kiện OrderUpdated
+  async onMessage (data: OrderUpdatedEvent['data'], msg: Message): Promise<void> {
+    // Chỉ xử lý khi order bị hủy
+    if (data.status !== 'cancelled') {
+      msg.ack();
+      return;
+    }
+
     console.log(`Đã nhận sự kiện hủy đơn hàng: ${data.id}`);
 
     try {
@@ -36,7 +42,7 @@ export class OrderCancelledListener extends Listener<OrderCancelledEvent> {
       // Xác nhận đã xử lý xong message với NATS
       msg.ack();
     } catch (error) {
-      console.error('Lỗi khi xử lý OrderCancelled event:', error);
+      console.error('Lỗi khi xử lý OrderUpdated event:', error);
       // Không ack message để NATS có thể retry
     }
   }

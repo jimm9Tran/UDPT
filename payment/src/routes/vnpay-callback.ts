@@ -66,17 +66,7 @@ router.get('/api/payments/vnpay-callback', async (req: Request, res: Response) =
       await new PaymentCreatedPublisher(natsWrapper.client).publish({
         id: payment.id,
         orderId: payment.orderId,
-        stripeId: payment.stripeId,
-        vnpayTxnRef: payment.vnpayTxnRef,
-        vnpayTransactionNo: payment.vnpayTransactionNo!,
-        amount: payment.amount,
-        currency: payment.currency,
-        paymentMethod: payment.paymentMethod,
-        status: payment.status,
-        vnpayResponseCode: payment.vnpayResponseCode!,
-        vnpayBankCode: payment.vnpayBankCode,
-        vnpayCardType: payment.vnpayCardType,
-        paidAt: payment.paidAt!
+        stripeId: payment.stripeId
       });
 
       console.log(`Thanh toán thành công cho đơn hàng ${payment.orderId}, payment ID: ${payment.id}`);
@@ -145,17 +135,7 @@ router.post('/api/payments/vnpay-ipn', async (req: Request, res: Response) => {
       await new PaymentCreatedPublisher(natsWrapper.client).publish({
         id: payment.id,
         orderId: payment.orderId,
-        stripeId: payment.stripeId,
-        vnpayTxnRef: payment.vnpayTxnRef,
-        vnpayTransactionNo: payment.vnpayTransactionNo!,
-        amount: payment.amount,
-        currency: payment.currency,
-        paymentMethod: payment.paymentMethod,
-        status: payment.status,
-        vnpayResponseCode: payment.vnpayResponseCode!,
-        vnpayBankCode: payment.vnpayBankCode,
-        vnpayCardType: payment.vnpayCardType,
-        paidAt: payment.paidAt!
+        stripeId: payment.stripeId
       });
 
       console.log(`IPN: Thanh toán thành công cho đơn hàng ${payment.orderId}, payment ID: ${payment.id}`);

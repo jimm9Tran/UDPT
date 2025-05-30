@@ -40,9 +40,7 @@ router.patch(
 
     const currentDate = new Date();
     order.set({ isDelivered: true, deliveredAt: currentDate });
-    await order.save();
-
-    // publishing an event saying this was cancelled!
+    await order.save();    // publishing an event saying this order was delivered!
     await new OrderUpdatedPublisher(natsWrapper.client).publish({
       id: order.id,
       status: order.status,

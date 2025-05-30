@@ -46,27 +46,48 @@ router.post(
       throw new Error('Giỏ hàng đang trống');
     } else if (paymentMethod == null) {
       throw new Error('Bạn chưa chọn phương thức thanh toán');
-    }
-
-    // Find reserve product in cart
+    }    // Validate and reserve products in cart using optimistic locking
     for (let i = 0; i < cart.length; i++) {
-      // Find the product that the order is reserving
-      const reservedProduct = await Product.find({
-        _id: cart[i].productId,
-        isReserved: true
-      });
-
+      const cartItem = cart[i];
+      
       // Find the product if it exists in database
-      const existedProduct = await Product.findById(cart[i].productId);
+      const existedProduct = await Product.findById(cartItem.productId);
 
-      // If reservedProduct existed, throw an error
-      if (reservedProduct?.length > 0) {
-        throw new Error(`${cart[i].title} đã được đặt trước, không thể mua tiếp`);
-      }
-
-      // If existedProduct DO NOT existed, throw an error
+      // If product doesn't exist, throw an error
       if (existedProduct == null) {
         throw new NotFoundError();
+      }
+
+      // Check if product is already reserved
+      if (existedProduct.isReserved) {
+        throw new Error(`${cartItem.title} đã được đặt trước, không thể mua tiếp`);
+      }
+
+      // Check if there's enough stock
+      if (existedProduct.countInStock < cartItem.qty) {
+        throw new Error(`${cartItem.title} chỉ còn ${existedProduct.countInStock} sản phẩm, không đủ số lượng bạn yêu cầu (${cartItem.qty})`);
+      }
+
+      // Reserve the product by setting isReserved to true and updating stock
+      // This uses optimistic locking with version control
+      try {
+        const newCountInStock = existedProduct.countInStock - cartItem.qty;
+        const shouldReserve = newCountInStock === 0;
+
+        existedProduct.set({
+          countInStock: newCountInStock,
+          isReserved: shouldReserve,
+          orderId: shouldReserve ? 'pending' : undefined
+        });
+
+        await existedProduct.save();
+        console.log(`Reserved ${cartItem.qty} of ${cartItem.title}, remaining stock: ${newCountInStock}`);
+      } catch (error: any) {
+        // If version conflict occurs, it means another user got there first
+        if (error.name === 'VersionError') {
+          throw new Error(`${cartItem.title} vừa được mua bởi người khác, vui lòng thử lại`);
+        }
+        throw error;
       }
     }
 

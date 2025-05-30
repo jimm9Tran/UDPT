@@ -11,7 +11,7 @@ import {
 
 import { Product } from '../models/product';
 import { ProductUpdatedPublisher } from '../events/publishers/ProductUpdatedPublisher';
-import { natsWrapper } from '../NatWapper';
+import { natsWrapper } from '../NatsWrapper';
 import type { ProductAttrs } from '../types/product';
 
 const router = express.Router();

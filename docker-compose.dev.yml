@@ -122,5 +122,44 @@ services:
       - mongo
       - nats
 
+  # --- API Gateway ---
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    command: npm run start
+    environment:
+      - PORT=4000
+      - USER_SERVICE_URL=http://user-service:3000
+      - PRODUCT_SERVICE_URL=http://product-service:3000
+      - ORDER_SERVICE_URL=http://order-service:3000
+      - PAYMENT_SERVICE_URL=http://payment-service:3000
+      - FRONTEND_URL=http://frontend:3000
+    ports:
+      - "4000:4000"
+    depends_on:
+      - user-service
+      - product-service
+      - order-service
+      - payment-service
+
+  # --- Frontend ---
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    command: npm start
+    environment:
+      - REACT_APP_API_URL=http://localhost:4000
+      - REACT_APP_VNPAY_RETURN_URL=http://localhost:3005/payment/return
+      - CHOKIDAR_USEPOLLING=true
+    ports:
+      - "3005:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - api-gateway
+
 volumes:
   mongo-data:

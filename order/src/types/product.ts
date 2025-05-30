@@ -39,6 +39,7 @@ export interface ProductDoc extends mongoose.Document {
   numReviews: number
   rating: number
   isReserved: boolean
+  orderId?: string
   version: number
   createdAt: string
   updatedAt: string
