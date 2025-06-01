@@ -28,25 +28,34 @@ const start = async (): Promise<void> => {
   }
 
   try {
-    await natsWrapper.connect(
-      process.env.NATS_CLUSTER_ID,
-      process.env.NATS_CLIENT_ID,
-      process.env.NATS_URL
-    );
-
-    natsWrapper.client.on('close', () => {
-      console.log('NATS connection closed!');
-      process.exit();
+    // Connect to MongoDB first
+    await mongoose.connect(process.env.MONGO_URI_PRODUCT, {
+      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
     });
-
-    process.on('SIGINT', () => { natsWrapper.client.close(); });
-    process.on('SIGTERM', () => { natsWrapper.client.close(); });
-
-    new OrderCreatedListener(natsWrapper.client).listen();
-    new OrderUpdatedListener(natsWrapper.client).listen();
-
-    await mongoose.connect(process.env.MONGO_URI_PRODUCT);
     console.log('Connected to MongoDB');
+
+    // Try to connect to NATS, but don't fail if it's not available
+    try {
+      await natsWrapper.connect(
+        process.env.NATS_CLUSTER_ID,
+        process.env.NATS_CLIENT_ID,
+        process.env.NATS_URL
+      );
+
+      natsWrapper.client.on('close', () => {
+        console.log('NATS connection closed!');
+        process.exit();
+      });
+
+      process.on('SIGINT', () => { natsWrapper.client.close(); });
+      process.on('SIGTERM', () => { natsWrapper.client.close(); });
+
+      new OrderCreatedListener(natsWrapper.client).listen();
+      new OrderUpdatedListener(natsWrapper.client).listen();
+      console.log('Connected to NATS and listening for events');
+    } catch (natsError: any) {
+      console.warn('Failed to connect to NATS, continuing without event messaging:', natsError.message);
+    }
 
     // Start reservation cleanup service
     const cleanupService = ReservationCleanupService.getInstance();

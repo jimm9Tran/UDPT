@@ -17,10 +17,16 @@ const Products = () => {
       try {
         setLoading(true);
         const response = await productAPI.getAll();
-        setProducts(response.data);
-        setFilteredProducts(response.data);
+        console.log('API Response:', response.data); // Debug log
+        // Handle the correct structure from API
+        const productsData = response.data?.products || [];
+        setProducts(productsData);
+        setFilteredProducts(productsData);
       } catch (error) {
         console.error('Error fetching products:', error);
+        // Set empty array on error to prevent map error
+        setProducts([]);
+        setFilteredProducts([]);
       } finally {
         setLoading(false);
       }
@@ -30,6 +36,9 @@ const Products = () => {
   }, []);
 
   useEffect(() => {
+    // Ensure products is always an array before filtering
+    if (!Array.isArray(products)) return;
+    
     let filtered = products.filter(product =>
       product.title.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -147,7 +156,7 @@ const Products = () => {
             <div className="flex items-center gap-4">
               {/* Results count */}
               <p className="text-gray-600 font-medium">
-                {filteredProducts.length} / {products.length} sản phẩm
+                {Array.isArray(filteredProducts) ? filteredProducts.length : 0} / {Array.isArray(products) ? products.length : 0} sản phẩm
               </p>
 
               {/* View Mode Toggle */}
@@ -170,7 +179,7 @@ const Products = () => {
         </div>
 
         {/* Products Grid/List */}
-        {filteredProducts.length > 0 ? (
+        {Array.isArray(filteredProducts) && filteredProducts.length > 0 ? (
           <div className={viewMode === 'grid' 
             ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" 
             : "space-y-4"

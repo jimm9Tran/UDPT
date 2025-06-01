@@ -46,7 +46,19 @@ const AdminProducts = () => {
   const [sortDirection, setSortDirection] = useState('desc');
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterStock, setFilterStock] = useState('all');
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState([
+    'Laptop',
+    'Điện thoại',
+    'Tablet',
+    'Tai nghe',
+    'Loa',
+    'Smartwatch',
+    'Phụ kiện',
+    'PC & Linh kiện',
+    'Gaming',
+    'Apple',
+    'Khác'
+  ]);
   const [viewMode, setViewMode] = useState('grid');
   const [productServiceHealth, setProductServiceHealth] = useState({
     status: 'unknown',
@@ -640,14 +652,38 @@ const AdminProducts = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Thương hiệu <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
+                  <select
                     name="brand"
                     value={formData.brand}
                     onChange={handleChange}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-primary-500 focus:border-primary-500"
                     required
-                  />
+                  >
+                    <option value="">Chọn thương hiệu</option>
+                    <option value="Apple">Apple</option>
+                    <option value="Samsung">Samsung</option>
+                    <option value="Dell">Dell</option>
+                    <option value="HP">HP</option>
+                    <option value="Lenovo">Lenovo</option>
+                    <option value="Asus">Asus</option>
+                    <option value="Acer">Acer</option>
+                    <option value="MSI">MSI</option>
+                    <option value="Xiaomi">Xiaomi</option>
+                    <option value="Oppo">Oppo</option>
+                    <option value="Vivo">Vivo</option>
+                    <option value="Huawei">Huawei</option>
+                    <option value="Sony">Sony</option>
+                    <option value="JBL">JBL</option>
+                    <option value="Bose">Bose</option>
+                    <option value="Logitech">Logitech</option>
+                    <option value="Razer">Razer</option>
+                    <option value="SteelSeries">SteelSeries</option>
+                    <option value="Corsair">Corsair</option>
+                    <option value="Intel">Intel</option>
+                    <option value="AMD">AMD</option>
+                    <option value="NVIDIA">NVIDIA</option>
+                    <option value="Khác">Khác</option>
+                  </select>
                 </div>
               </div>
               
@@ -749,8 +785,8 @@ const AdminProducts = () => {
                   Hình ảnh sản phẩm
                 </label>
                 <ImageUpload
-                  selectedImages={selectedImages}
-                  setSelectedImages={setSelectedImages}
+                  images={selectedImages}
+                  onImagesChange={setSelectedImages}
                   maxImages={5}
                 />
               </div>

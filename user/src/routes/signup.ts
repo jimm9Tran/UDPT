@@ -64,16 +64,19 @@ router.post(
       // Attach JWT to session cookie
       req.session = { jwt: userJwt };
 
-      // Respond with created user (excluding sensitive password)
+      // Respond with created user and token
       return res.status(201).send({
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        gender: user.gender,
-        age: user.age,
-        bio: user.bio,
-        shippingAddress: user.shippingAddress,
-        image: user.image
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          gender: user.gender,
+          age: user.age,
+          bio: user.bio,
+          shippingAddress: user.shippingAddress,
+          image: user.image
+        },
+        token: userJwt
       });
     } catch (err: any) {
       console.error('Signup error:', err);
