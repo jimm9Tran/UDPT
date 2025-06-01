@@ -18,7 +18,8 @@ router.post(
       .withMessage('Mật khẩu phải từ 4 đến 20 ký tự'),
     body('name').not().isEmpty().withMessage('Tên không được để trống'),
     body('gender').not().isEmpty().withMessage('Giới tính không được để trống'),
-    body('age').isInt({ gt: 0 }).withMessage('Tuổi phải lớn hơn 0'),
+    body('age').isInt({ gt: 12 }).withMessage('Tuổi phải từ 13 trở lên'),
+    // Bio and shipping address are optional, no validation needed
   ],
   validateRequest,
   async (req: Request, res: Response) => {
@@ -71,9 +72,15 @@ router.post(
         name: user.name,
         gender: user.gender,
         age: user.age,
-        bio: user.bio,
-        shippingAddress: user.shippingAddress,
-        image: user.image
+        bio: user.bio || '',
+        shippingAddress: user.shippingAddress || {
+          address: '',
+          city: '',
+          postalCode: '',
+          country: 'Việt Nam'
+        },
+        image: user.image,
+        isAdmin: user.isAdmin
       });
     } catch (err: any) {
       console.error('Signup error:', err);

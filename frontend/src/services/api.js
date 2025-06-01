@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_HOST = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+const API_HOST = process.env.REACT_APP_API_URL || 'http://localhost:4000';
 const API_BASE_URL = `${API_HOST}/api`;
 
 // Create axios instance with default config
@@ -11,18 +11,6 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
-
-// Service URLs - Direct microservice ports (for development)
-const DIRECT_SERVICE_PORTS = {
-  user: 3001,
-  product: 3002,
-  order: 3003,
-  payment: 3004,
-  expiration: 3005 // internal service
-};
-
-// Use API Gateway by default, fallback to direct service if needed
-const USE_API_GATEWAY = true;
 
 // Add authorization interceptor
 api.interceptors.request.use((config) => {
@@ -218,17 +206,6 @@ export const healthAPI = {
       };
     }
   }
-};
-
-// Helper function to get port for service
-const getPortForService = (serviceName) => {
-  const portMap = {
-    user: 3000,
-    product: 3001,
-    order: 3002,
-    payment: 3003
-  };
-  return portMap[serviceName] || 3000;
 };
 
 export default api;

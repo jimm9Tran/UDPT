@@ -32,16 +32,18 @@ const userSchema = new mongoose.Schema(
     },
     age: {
       type: Number,
-      required: true
+      required: true,
+      min: 13
     },
     bio: {
-      type: String
+      type: String,
+      default: ''
     },
     shippingAddress: {
-      address: { type: String },
-      city: { type: String },
-      postalCode: { type: String },
-      country: { type: String }
+      address: { type: String, default: '' },
+      city: { type: String, default: '' },
+      postalCode: { type: String, default: '' },
+      country: { type: String, default: 'Việt Nam' }
     }
   },
   {

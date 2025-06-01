@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { orderAPI, productAPI, paymentAPI, healthAPI } from '../services/api';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { orderAPI, productAPI, healthAPI } from '../services/api';
 import * as Icons from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -24,11 +24,7 @@ const AdminDashboard = () => {
   const [timeRange, setTimeRange] = useState('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, [timeRange]);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -116,7 +112,11 @@ const AdminDashboard = () => {
       setLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, [timeRange]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
   const refreshData = () => {
     setIsRefreshing(true);

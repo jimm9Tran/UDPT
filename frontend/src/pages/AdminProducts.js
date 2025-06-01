@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { productAPI, healthAPI } from '../services/api';
 import * as Icons from 'lucide-react';
 import ImageUpload from '../components/ImageUpload';
@@ -54,12 +54,6 @@ const AdminProducts = () => {
   });
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  useEffect(() => {
-    fetchProducts();
-    fetchCategories();
-    checkProductServiceHealth();
-  }, []);
-
   const checkProductServiceHealth = async () => {
     try {
       const response = await healthAPI.checkServices();
@@ -89,7 +83,7 @@ const AdminProducts = () => {
     }
   };
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       setIsRefreshing(true);
@@ -105,7 +99,14 @@ const AdminProducts = () => {
       setLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, []);
+
+  // Fetch data when component mounts
+  useEffect(() => {
+    fetchProducts();
+    fetchCategories();
+    checkProductServiceHealth();
+  }, [fetchProducts]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -296,15 +297,6 @@ const AdminProducts = () => {
     } else {
       setFormData({ ...formData, [name]: value });
     }
-  };
-
-  // Handle arrays like features, inTheBox, tags
-  const handleArrayChange = (e, arrayName) => {
-    const value = e.target.value;
-    setFormData({
-      ...formData,
-      [arrayName]: value.split('\n').filter(item => item.trim() !== '')
-    });
   };
 
   if (loading && products.length === 0) {

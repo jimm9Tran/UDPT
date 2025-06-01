@@ -17,10 +17,13 @@ const Products = () => {
       try {
         setLoading(true);
         const response = await productAPI.getAll();
-        setProducts(response.data);
-        setFilteredProducts(response.data);
+        const productsData = Array.isArray(response.data) ? response.data : [];
+        setProducts(productsData);
+        setFilteredProducts(productsData);
       } catch (error) {
         console.error('Error fetching products:', error);
+        setProducts([]);
+        setFilteredProducts([]);
       } finally {
         setLoading(false);
       }
@@ -30,6 +33,8 @@ const Products = () => {
   }, []);
 
   useEffect(() => {
+    if (!Array.isArray(products)) return;
+    
     let filtered = products.filter(product =>
       product.title.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -75,7 +80,9 @@ const Products = () => {
     );
   }
 
-  const categories = ['all', ...new Set(products.map(p => p.category).filter(Boolean))];
+  const categories = Array.isArray(products) ? 
+    ['all', ...new Set(products.map(p => p.category).filter(Boolean))] : 
+    ['all'];
 
   return (
     <div className="min-h-screen bg-gray-50">

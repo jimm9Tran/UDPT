@@ -430,7 +430,7 @@ const OrderDetail = () => {
           </div>
         ) : (
           <div className="text-center py-8">
-            <Activity size={48} className="mx-auto text-gray-300 mb-3" />
+            <Icons.Activity size={48} className="mx-auto text-gray-300 mb-3" />
             <p className="text-gray-500">Không có dữ liệu lịch sử đơn hàng</p>
           </div>
         )}
