@@ -246,8 +246,14 @@ router.post(
       // Clear existing products (only for demo)
       await Product.deleteMany({});
       
+      // Add userId to each sample product
+      const productsWithUserId = sampleProducts.map(product => ({
+        ...product,
+        userId: req.currentUser!.id
+      }));
+      
       // Insert sample products
-      const createdProducts = await Product.insertMany(sampleProducts);
+      const createdProducts = await Product.insertMany(productsWithUserId);
       
       res.status(201).send({
         message: `Đã tạo ${createdProducts.length} sản phẩm mẫu`,

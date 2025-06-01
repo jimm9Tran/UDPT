@@ -756,13 +756,67 @@ const AdminProducts = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Danh mục phụ
                   </label>
-                  <input
-                    type="text"
+                  <select
                     name="subCategory"
                     value={formData.subCategory}
                     onChange={handleChange}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-primary-500 focus:border-primary-500"
-                  />
+                  >
+                    <option value="">Chọn danh mục phụ</option>
+                    {formData.category === 'Laptop' && (
+                      <>
+                        <option value="Gaming">Gaming</option>
+                        <option value="Văn phòng">Văn phòng</option>
+                        <option value="Mỏng nhẹ">Mỏng nhẹ</option>
+                        <option value="Workstation">Workstation</option>
+                        <option value="MacBook">MacBook</option>
+                      </>
+                    )}
+                    {formData.category === 'Điện thoại' && (
+                      <>
+                        <option value="iPhone">iPhone</option>
+                        <option value="Samsung">Samsung</option>
+                        <option value="Android">Android</option>
+                        <option value="Gaming Phone">Gaming Phone</option>
+                        <option value="Flagship">Flagship</option>
+                        <option value="Tầm trung">Tầm trung</option>
+                        <option value="Giá rẻ">Giá rẻ</option>
+                      </>
+                    )}
+                    {formData.category === 'Tai nghe' && (
+                      <>
+                        <option value="True Wireless">True Wireless</option>
+                        <option value="Gaming">Gaming</option>
+                        <option value="Over-ear">Over-ear</option>
+                        <option value="On-ear">On-ear</option>
+                        <option value="In-ear">In-ear</option>
+                        <option value="Có dây">Có dây</option>
+                      </>
+                    )}
+                    {formData.category === 'PC & Linh kiện' && (
+                      <>
+                        <option value="CPU">CPU</option>
+                        <option value="GPU">GPU</option>
+                        <option value="RAM">RAM</option>
+                        <option value="Mainboard">Mainboard</option>
+                        <option value="SSD">SSD</option>
+                        <option value="PSU">PSU</option>
+                        <option value="Case">Case</option>
+                        <option value="Cooling">Cooling</option>
+                      </>
+                    )}
+                    {formData.category === 'Phụ kiện' && (
+                      <>
+                        <option value="Chuột">Chuột</option>
+                        <option value="Bàn phím">Bàn phím</option>
+                        <option value="Webcam">Webcam</option>
+                        <option value="Cáp sạc">Cáp sạc</option>
+                        <option value="Sạc dự phòng">Sạc dự phòng</option>
+                        <option value="Ốp lưng">Ốp lưng</option>
+                        <option value="Miếng dán">Miếng dán</option>
+                      </>
+                    )}
+                  </select>
                 </div>
               </div>
               
@@ -811,26 +865,48 @@ const AdminProducts = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     RAM
                   </label>
-                  <input
-                    type="text"
+                  <select
                     name="specifications.ram"
                     value={formData.specifications?.ram || ''}
                     onChange={handleChange}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-primary-500 focus:border-primary-500"
-                  />
+                  >
+                    <option value="">Chọn RAM</option>
+                    <option value="4GB">4GB</option>
+                    <option value="6GB">6GB</option>
+                    <option value="8GB">8GB</option>
+                    <option value="12GB">12GB</option>
+                    <option value="16GB">16GB</option>
+                    <option value="24GB">24GB</option>
+                    <option value="32GB">32GB</option>
+                    <option value="64GB">64GB</option>
+                    <option value="128GB">128GB</option>
+                  </select>
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Lưu trữ
                   </label>
-                  <input
-                    type="text"
+                  <select
                     name="specifications.storage"
                     value={formData.specifications?.storage || ''}
                     onChange={handleChange}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-primary-500 focus:border-primary-500"
-                  />
+                  >
+                    <option value="">Chọn dung lượng</option>
+                    <option value="64GB">64GB</option>
+                    <option value="128GB">128GB</option>
+                    <option value="256GB">256GB</option>
+                    <option value="512GB">512GB</option>
+                    <option value="1TB">1TB</option>
+                    <option value="2TB">2TB</option>
+                    <option value="4TB">4TB</option>
+                    <option value="256GB SSD">256GB SSD</option>
+                    <option value="512GB SSD">512GB SSD</option>
+                    <option value="1TB SSD">1TB SSD</option>
+                    <option value="2TB SSD">2TB SSD</option>
+                  </select>
                 </div>
                 
                 <div>
@@ -889,13 +965,24 @@ const AdminProducts = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Hệ điều hành
                   </label>
-                  <input
-                    type="text"
+                  <select
                     name="specifications.operatingSystem"
                     value={formData.specifications?.operatingSystem || ''}
                     onChange={handleChange}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-primary-500 focus:border-primary-500"
-                  />
+                  >
+                    <option value="">Chọn hệ điều hành</option>
+                    <option value="Windows 11">Windows 11</option>
+                    <option value="Windows 10">Windows 10</option>
+                    <option value="macOS">macOS</option>
+                    <option value="Linux">Linux</option>
+                    <option value="Ubuntu">Ubuntu</option>
+                    <option value="iOS">iOS</option>
+                    <option value="Android">Android</option>
+                    <option value="iPadOS">iPadOS</option>
+                    <option value="Chrome OS">Chrome OS</option>
+                    <option value="Không có">Không có</option>
+                  </select>
                 </div>
                 
                 <div>

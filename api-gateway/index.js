@@ -1,8 +1,8 @@
 const express = require('express');
 const cors = require('cors');
-const http = require('http');
-const { URL } = require('url');
+const { createProxyMiddleware } = require('http-proxy-middleware');
 const rateLimit = require('express-rate-limit');
+const axios = require('axios');
 require('dotenv').config();
 
 const app = express();
@@ -11,21 +11,20 @@ const app = express();
 app.use(cors({
   origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3005'],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
 }));
 
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 1000,
   message: 'Too many requests from this IP, please try again later.'
 });
 
 app.use(limiter);
-app.use(express.json());
 
-// Service URLs (Using internal Docker ports - all services run on port 3000 internally)
+// Service URLs
 const services = {
   user: process.env.USER_SERVICE_URL || 'http://user-service:3000',
   product: process.env.PRODUCT_SERVICE_URL || 'http://product-service:3000',
@@ -45,227 +44,95 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Comprehensive health check for all services
+// Detailed health check with service status
 app.get('/health/services', async (req, res) => {
-  const healthChecks = {};
+  const serviceStatuses = {};
   
-  try {
-    // Check all services
-    const checkPromises = Object.entries(services).map(async ([serviceName, serviceUrl]) => {
-      try {
-        const targetUrl = new URL('/api/health', serviceUrl);
-        const response = await new Promise((resolve, reject) => {
-          const options = {
-            hostname: targetUrl.hostname,
-            port: targetUrl.port,
-            path: targetUrl.pathname,
-            method: 'GET',
-            timeout: 3000
-          };
-          
-          const request = require('http').request(options, (res) => {
-            let data = '';
-            res.on('data', chunk => data += chunk);
-            res.on('end', () => {
-              try {
-                const result = JSON.parse(data);
-                resolve({ status: res.statusCode, data: result });
-              } catch (e) {
-                resolve({ status: res.statusCode, data: data });
-              }
-            });
-          });
-          
-          request.on('error', reject);
-          request.on('timeout', () => {
-            request.destroy();
-            reject(new Error('Timeout'));
-          });
-          
-          request.end();
-        });
-        
-        healthChecks[serviceName] = {
-          status: response.status === 200 ? 'healthy' : 'unhealthy',
-          url: serviceUrl,
-          response: response.data
-        };
-      } catch (error) {
-        healthChecks[serviceName] = {
-          status: 'unhealthy',
-          url: serviceUrl,
-          error: error.message
-        };
-      }
-    });
-    
-    await Promise.all(checkPromises);
-    
-    const overallStatus = Object.values(healthChecks).every(check => check.status === 'healthy') 
-      ? 'healthy' : 'degraded';
-    
-    res.json({
-      status: overallStatus,
-      timestamp: new Date().toISOString(),
-      services: healthChecks
-    });
-  } catch (error) {
-    res.status(500).json({
-      status: 'error',
-      timestamp: new Date().toISOString(),
-      error: error.message
-    });
+  for (const [serviceName, serviceUrl] of Object.entries(services)) {
+    try {
+      const healthUrl = `${serviceUrl}/api/health`;
+      console.log(`🔍 Checking health for ${serviceName} at ${healthUrl}`);
+      
+      const response = await axios.get(healthUrl, { timeout: 5000 });
+      
+      // Extract detailed response data if available
+      const responseData = response.data || {};
+      console.log(`✅ ${serviceName} health response:`, responseData);
+      
+      serviceStatuses[serviceName] = {
+        status: 'healthy',
+        url: serviceUrl,
+        responseTime: response.headers['x-response-time'] || 'N/A',
+        lastChecked: new Date().toISOString(),
+        response: {
+          uptime: responseData.uptime || null,
+          timestamp: responseData.timestamp || new Date().toISOString(),
+          version: responseData.version || 'N/A',
+          memory: responseData.memory || null,
+          database: responseData.database || null
+        }
+      };
+    } catch (error) {
+      console.error(`❌ ${serviceName} health check failed:`, error.message);
+      serviceStatuses[serviceName] = {
+        status: 'unhealthy',
+        url: serviceUrl,
+        error: error.message,
+        lastChecked: new Date().toISOString(),
+        response: null
+      };
+    }
   }
-});
-
-// HTTP proxy function
-const httpProxyRequest = (req, res, serviceUrl) => {
-  return new Promise((resolve, reject) => {
-    const targetUrl = new URL(req.originalUrl, serviceUrl);
-    
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} -> ${targetUrl.href}`);
-    
-    const options = {
-      hostname: targetUrl.hostname,
-      port: targetUrl.port,
-      path: targetUrl.pathname + targetUrl.search,
-      method: req.method,
-      headers: {
-        ...req.headers,
-        host: targetUrl.host,
-        'user-agent': 'api-gateway/1.0.0'
-      },
-      timeout: 5000
-    };
-    
-    // Remove undefined headers
-    delete options.headers.host;
-    if (options.headers.host === undefined) {
-      delete options.headers.host;
+  
+  const healthyCount = Object.values(serviceStatuses).filter(s => s.status === 'healthy').length;
+  const totalCount = Object.keys(serviceStatuses).length;
+  
+  console.log(`📊 Health summary: ${healthyCount}/${totalCount} services healthy`);
+  
+  res.json({
+    overallStatus: healthyCount === totalCount ? 'healthy' : 'degraded',
+    timestamp: new Date().toISOString(),
+    services: serviceStatuses,
+    summary: {
+      total: totalCount,
+      healthy: healthyCount,
+      unhealthy: totalCount - healthyCount
     }
-    
-    console.log(`[PROXY] Making HTTP request to: ${targetUrl.href}`);
-    console.log(`[PROXY] Options:`, JSON.stringify(options, null, 2));
-    
-    if (['POST', 'PUT', 'PATCH'].includes(req.method) && req.body) {
-      const bodyData = JSON.stringify(req.body);
-      options.headers['content-type'] = 'application/json';
-      options.headers['content-length'] = Buffer.byteLength(bodyData);
-      console.log(`[PROXY] Request body:`, req.body);
-    }
-    
-    const proxyReq = http.request(options, (proxyRes) => {
-      console.log(`[PROXY] Response status: ${proxyRes.statusCode}`);
-      
-      // Forward cookies
-      if (proxyRes.headers['set-cookie']) {
-        res.setHeader('set-cookie', proxyRes.headers['set-cookie']);
-      }
-      
-      // Forward other headers
-      Object.keys(proxyRes.headers).forEach(key => {
-        if (key !== 'set-cookie' && key !== 'content-encoding' && key !== 'transfer-encoding') {
-          res.setHeader(key, proxyRes.headers[key]);
-        }
-      });
-      
-      res.status(proxyRes.statusCode);
-      
-      let responseData = '';
-      proxyRes.on('data', (chunk) => {
-        responseData += chunk;
-      });
-      
-      proxyRes.on('end', () => {
-        try {
-          const jsonData = JSON.parse(responseData);
-          res.json(jsonData);
-        } catch (error) {
-          res.send(responseData);
-        }
-        resolve();
-      });
-    });
-    
-    proxyReq.on('timeout', () => {
-      console.error(`[ERROR] Timeout for ${req.method} ${req.originalUrl}`);
-      proxyReq.destroy();
-      res.status(504).json({
-        error: 'Gateway timeout',
-        message: 'Service did not respond in time',
-        timestamp: new Date().toISOString()
-      });
-      reject(new Error('Timeout'));
-    });
-    
-    proxyReq.on('error', (error) => {
-      console.error(`[ERROR] Proxy error for ${req.method} ${req.originalUrl}:`, error.message);
-      res.status(500).json({
-        error: 'Service temporarily unavailable',
-        message: error.message,
-        timestamp: new Date().toISOString()
-      });
-      reject(error);
-    });
-    
-    // Write body for POST/PUT requests
-    if (['POST', 'PUT', 'PATCH'].includes(req.method) && req.body) {
-      proxyReq.write(JSON.stringify(req.body));
-    }
-    
-    proxyReq.end();
   });
-};
+});
 
-// Route handlers
-// Health check routes for each service (must be before general routes)
-app.get('/api/health', async (req, res) => {
-  try {
-    await httpProxyRequest(req, res, services.user);
-  } catch (error) {
-    // Error already handled in httpProxyRequest
+// Create proxy middleware options
+const createProxyOptions = (target) => ({
+  target,
+  changeOrigin: true,
+  timeout: 10000,
+  proxyTimeout: 10000,
+  logLevel: 'debug',
+  onError: (err, req, res) => {
+    console.error(`[PROXY ERROR] ${req.method} ${req.originalUrl}:`, err.message);
+    if (!res.headersSent) {
+      res.status(502).json({
+        error: 'Bad Gateway',
+        message: 'Service temporarily unavailable',
+        timestamp: new Date().toISOString()
+      });
+    }
+  },
+  onProxyReq: (proxyReq, req, res) => {
+    console.log(`[PROXY] ${req.method} ${req.originalUrl} -> ${target}${req.originalUrl}`);
+    console.log(`[PROXY] Content-Type: ${req.headers['content-type']}`);
+  },
+  onProxyRes: (proxyRes, req, res) => {
+    console.log(`[PROXY] Response: ${proxyRes.statusCode} for ${req.method} ${req.originalUrl}`);
   }
 });
 
-app.use('/api/users', async (req, res) => {
-  try {
-    await httpProxyRequest(req, res, services.user);
-  } catch (error) {
-    // Error already handled in httpProxyRequest
-  }
-});
-
-app.use('/api/products', async (req, res) => {
-  try {
-    await httpProxyRequest(req, res, services.product);
-  } catch (error) {
-    // Error already handled in httpProxyRequest
-  }
-});
-
-app.use('/api/bestsellers', async (req, res) => {
-  try {
-    await httpProxyRequest(req, res, services.product);
-  } catch (error) {
-    // Error already handled in httpProxyRequest
-  }
-});
-
-app.use('/api/orders', async (req, res) => {
-  try {
-    await httpProxyRequest(req, res, services.order);
-  } catch (error) {
-    // Error already handled in httpProxyRequest
-  }
-});
-
-app.use('/api/payments', async (req, res) => {
-  try {
-    await httpProxyRequest(req, res, services.payment);
-  } catch (error) {
-    // Error already handled in httpProxyRequest
-  }
-});
+// Route handlers using http-proxy-middleware
+app.use('/api/users', createProxyMiddleware(createProxyOptions(services.user)));
+app.use('/api/products', createProxyMiddleware(createProxyOptions(services.product)));
+app.use('/api/bestsellers', createProxyMiddleware(createProxyOptions(services.product)));
+app.use('/api/orders', createProxyMiddleware(createProxyOptions(services.order)));
+app.use('/api/payments', createProxyMiddleware(createProxyOptions(services.payment)));
 
 // Fallback route
 app.use('*', (req, res) => {

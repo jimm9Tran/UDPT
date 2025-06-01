@@ -14,7 +14,7 @@ services:
   nats:
     image: nats-streaming:latest
     restart: unless-stopped
-    command: ["-cid", "dev-cluster"]
+    command: ["-cid", "test-cluster"]
     ports:
       - "4222:4222"
       - "8222:8222"
@@ -39,8 +39,10 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     depends_on:
-      - nats
-      - redis
+      nats:
+        condition: service_started
+      redis:
+        condition: service_started
 
   # --- User Service ---
   user-service:
@@ -77,8 +79,10 @@ services:
     ports:
       - "3001:3000"
     depends_on:
-      - mongo
-      - nats
+      mongo:
+        condition: service_started
+      nats:
+        condition: service_started
 
   # --- Order Service ---
   order-service:
@@ -96,8 +100,10 @@ services:
     ports:
       - "3002:3000"
     depends_on:
-      - mongo
-      - nats
+      mongo:
+        condition: service_started
+      nats:
+        condition: service_started
 
   # --- Payment Service ---
   payment-service:
@@ -120,8 +126,10 @@ services:
     ports:
       - "3003:3000"
     depends_on:
-      - mongo
-      - nats
+      mongo:
+        condition: service_started
+      nats:
+        condition: service_started
 
   # --- API Gateway ---
   api-gateway:
@@ -154,6 +162,8 @@ services:
       - REACT_APP_API_URL=http://localhost:4000
       - REACT_APP_VNPAY_RETURN_URL=http://localhost:3005/payment/return
       - CHOKIDAR_USEPOLLING=true
+      - PROXY_HOST=api-gateway
+      - PROXY_PORT=4000
     ports:
       - "3005:3000"
     volumes:

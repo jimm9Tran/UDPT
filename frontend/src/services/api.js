@@ -191,9 +191,10 @@ export const healthAPI = {
       // Use the comprehensive health check endpoint that actually tests services
       // Need to call the health endpoint directly without /api prefix
       const healthResponse = await axios.get(`${API_HOST}/health/services`);
+      console.log('🟢 [DEBUG] Health API response:', healthResponse.data);
       return { data: healthResponse.data };
     } catch (error) {
-      console.error('Health check failed:', error);
+      console.error('🔴 [DEBUG] Health check failed:', error);
       // Return default structure if health check fails
       return {
         data: {

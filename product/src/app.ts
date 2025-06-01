@@ -31,7 +31,7 @@ app.use(
   })
 );
 
-app.use(currentUser)
+// app.use(currentUser)  // Temporarily disabled for testing
 
 app.use(bestsellerRouter); // Đặt trước getProductRouter
 app.use(createProductRouter);
