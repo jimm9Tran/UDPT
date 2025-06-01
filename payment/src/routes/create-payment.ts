@@ -13,7 +13,7 @@ import {
 
 import { Payment } from '../models/payment';
 import { OrderInfo } from '../models/order-info';
-import { PaymentStatus } from '../types/payment';
+import { PaymentStatus, PaymentMethod } from '../types/payment';
 import { VNPayHelper } from '../helpers/vnpay';
 import { natsWrapper } from '../NatsWrapper';
 import { PaymentCreatedPublisher } from '../events/publishers/PaymentCreatedPublisher';
@@ -41,6 +41,9 @@ router.post(
     body('amount')
       .isFloat({ gt: 0 })
       .withMessage('Số tiền phải lớn hơn 0'),
+    body('paymentMethod')
+      .isIn(['VNPay', 'COD'])
+      .withMessage('Phương thức thanh toán phải là VNPay hoặc COD'),
     body('bankCode')
       .optional()
       .isString()
@@ -48,12 +51,13 @@ router.post(
   ],
   validateRequest,
   async (req: Request, res: Response) => {
-    const { orderId, amount, bankCode } = req.body;
+    const { orderId, amount, bankCode, paymentMethod = 'VNPay' } = req.body;
     const userId = req.currentUser!.id;
 
     console.log('Payment request - User ID:', userId);
     console.log('Payment request - Order ID:', orderId);
     console.log('Payment request - Amount:', amount);
+    console.log('Payment request - Method:', paymentMethod);
 
     // Kiểm tra order có tồn tại và thuộc về user hiện tại không
     const orderInfo = await OrderInfo.findOne({ _id: orderId });
@@ -103,7 +107,39 @@ router.post(
 
     // Tạo mã giao dịch duy nhất
     const vnpayTxnRef = `${orderId}_${Date.now()}`;
-    console.log('Generated VNPay transaction reference:', vnpayTxnRef);
+    console.log('Generated transaction reference:', vnpayTxnRef);
+
+    // Xử lý thanh toán COD
+    if (paymentMethod === 'COD') {
+      console.log('Processing COD payment...');
+      
+      // Tạo COD payment record với trạng thái pending
+      const payment = Payment.build({
+        orderId,
+        stripeId: `cod_${vnpayTxnRef}`,
+        vnpayTxnRef,
+        amount,
+        currency: 'VND',
+        paymentMethod: PaymentMethod.COD,
+        status: PaymentStatus.Pending
+      });
+
+      await payment.save();
+      console.log('COD payment saved successfully');
+
+      // COD payment không cần redirect, chỉ cần thông báo thành công
+      res.status(201).send({
+        id: payment.id,
+        orderId: payment.orderId,
+        amount: payment.amount,
+        status: payment.status,
+        paymentMethod: 'COD',
+        vnpayTxnRef: payment.vnpayTxnRef,
+        message: "Đặt hàng thành công! Bạn sẽ thanh toán khi nhận hàng (COD).",
+        instructions: "Vui lòng chuẩn bị tiền mặt để thanh toán khi shipper giao hàng."
+      });
+      return;
+    }
 
     // Tạo payment record với trạng thái pending
     console.log('Creating payment record...');
@@ -113,7 +149,7 @@ router.post(
       vnpayTxnRef,
       amount,
       currency: 'VND',
-      paymentMethod: 'VNPay',
+      paymentMethod: PaymentMethod.VNPay,
       status: PaymentStatus.Pending
     });
 

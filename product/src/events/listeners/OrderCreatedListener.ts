@@ -1,5 +1,3 @@
-// src/events/listeners/OrderCreatedListener.ts
-
 import { Listener, type OrderCreatedEvent, Subjects, QueueGroupNames } from '@jimm9tran/common';
 import { type Message } from 'node-nats-streaming';
 
@@ -17,9 +15,8 @@ export class OrderCreatedListener extends Listener<OrderCreatedEvent> {
     // Lấy danh sách sản phẩm trong giỏ hàng từ event
     const items = data.cart;
 
-    // Nếu giỏ hàng rỗng thì xác nhận đã nhận message và kết thúc
+    // Nếu giỏ hàng rỗng thì kết thúc
     if (items!.length === 0) {
-      // Xác nhận đã xử lý message với NATS
       msg.ack(); return;
     }
 
@@ -59,15 +56,12 @@ export class OrderCreatedListener extends Listener<OrderCreatedEvent> {
       // Phát sự kiện ProductUpdated để các service khác đồng bộ trạng thái sản phẩm
       await new ProductUpdatedPublisher(this.client).publish({
         id: product.id,
-        price: product.price,
         title: product.title,
+        price: product.price,
         userId: product.userId,
         image: product.images.image1,
-        colors: product.colors,
-        sizes: product.sizes,
         brand: product.brand,
         category: product.category,
-        material: product.material,
         description: product.description,
         numReviews: product.numReviews,
         rating: product.rating,

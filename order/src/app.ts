@@ -12,10 +12,16 @@ import { getOrderRouter } from './routes/get-order';
 import { createOrderRouter } from './routes/create-order';
 import { deliverOrderRouter } from './routes/deliver-order';
 import { showProductRouter } from './routes/show-product';
+import { healthRouter } from './routes/health';
+import { adminOrderRouter } from './routes/admin-orders';
 
 const app = express();
 app.set('trust proxy', true);
 app.use(express.json());
+
+// Health check first (no auth required)
+app.use(healthRouter);
+
 app.use(
   cookieSession({
     signed: false,
@@ -33,6 +39,8 @@ app.use(deliverOrderRouter);
 app.use(cancelOrderRouter);
 app.use(showAllOrderRouter);
 app.use(createOrderRouter);
+app.use(healthRouter);
+app.use(adminOrderRouter);
 
 app.all('*', async (req, res) => {
   throw new NotFoundError();

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { orderAPI } from '../services/api';
-import { Package, Clock, CheckCircle, XCircle } from 'lucide-react';
+import * as Icons from 'lucide-react';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
@@ -26,14 +26,14 @@ const Orders = () => {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'pending':
-        return <Clock className="text-yellow-500" size={20} />;
+        return <Icons.Clock className="text-yellow-500" size={20} />;
       case 'completed':
       case 'delivered':
-        return <CheckCircle className="text-green-500" size={20} />;
+        return <Icons.CheckCircle className="text-green-500" size={20} />;
       case 'cancelled':
-        return <XCircle className="text-red-500" size={20} />;
+        return <Icons.XCircle className="text-red-500" size={20} />;
       default:
-        return <Package className="text-gray-500" size={20} />;
+        return <Icons.Package className="text-gray-500" size={20} />;
     }
   };
 
@@ -138,7 +138,7 @@ const Orders = () => {
         </div>
       ) : (
         <div className="text-center py-12">
-          <Package size={64} className="mx-auto text-gray-400 mb-4" />
+          <Icons.Package size={64} className="mx-auto text-gray-400 mb-4" />
           <h2 className="text-2xl font-semibold text-gray-900 mb-2">
             Bạn chưa có đơn hàng nào
           </h2>

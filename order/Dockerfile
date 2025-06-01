@@ -1,8 +1,24 @@
-FROM node:lts-alpine
+# Order Service Dockerfile
+FROM node:18-alpine
 
+# Set working directory
 WORKDIR /app
-COPY package.json .
-RUN npm install --only=prod
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy source code
 COPY . .
 
-CMD ["npm", "run", "prod"]
+# Expose port
+EXPOSE 3002
+
+# Add health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD curl -f http://localhost:3002/health || exit 1
+
+# Start the application in development mode
+CMD ["npm", "run", "start"]

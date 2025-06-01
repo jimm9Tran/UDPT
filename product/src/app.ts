@@ -11,9 +11,16 @@ import { getProductRouter } from './routes/get-product';
 import { deleteProductRouter } from './routes/delete-product';
 import { updateProductRouter } from './routes/update-product';
 import { bestsellerRouter } from './routes/bestseller';
+import { healthRouter } from './routes/product-health';
+import { checkInventoryRouter } from './routes/check-inventory';
+import { cleanupReservationsRouter } from './routes/cleanup-reservations';
+import { seedProductsRouter } from './routes/seed-products';
 
 const app = express();
 app.use(json());
+
+// Health check first (no auth required)
+app.use(healthRouter);
 
 app.use(
   cookieSession({
@@ -26,12 +33,16 @@ app.use(
 
 app.use(currentUser)
 
+app.use(bestsellerRouter); // Đặt trước getProductRouter
 app.use(createProductRouter);
 app.use(getAllProductsRouter)
-app.use(getProductRouter);
+app.use(getProductRouter); // Đặt sau các route cụ thể
 app.use(deleteProductRouter);
 app.use(updateProductRouter);
-app.use(bestsellerRouter)
+app.use(checkInventoryRouter);
+app.use(cleanupReservationsRouter);
+app.use(seedProductsRouter);
+app.use(healthRouter)
 
 // Xử lý lỗi 404 cho các route không tồn tại
 app.all('*', async (req, res) => {

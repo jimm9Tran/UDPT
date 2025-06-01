@@ -11,10 +11,15 @@ import { createCODPaymentRouter } from './routes/create-cod-payment';
 import { confirmCODPaymentRouter } from './routes/confirm-cod-payment';
 import { vnpayCallbackRouter } from './routes/vnpay-callback';
 import { getPaymentRouter } from './routes/get-payment';
+import { healthRouter } from './routes/health';
 
 const app = express();
 app.set('trust proxy', true);
 app.use(json());
+
+// Health check first (no auth required)
+app.use(healthRouter);
+
 app.use(
   cookieSession({
     signed: false,
@@ -29,6 +34,7 @@ app.use(createCODPaymentRouter);
 app.use(confirmCODPaymentRouter);
 app.use(vnpayCallbackRouter);
 app.use(getPaymentRouter);
+app.use(healthRouter);
 
 app.all('*', async (req: Request, res: Response) => {
   throw new NotFoundError();

@@ -14,6 +14,7 @@ services:
   nats:
     image: nats-streaming:latest
     restart: unless-stopped
+    command: ["-cid", "dev-cluster"]
     ports:
       - "4222:4222"
       - "8222:8222"

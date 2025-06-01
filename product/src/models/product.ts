@@ -10,12 +10,18 @@ const productSchema = new mongoose.Schema<ProductDoc, ProductModel>(
   {
     title: {
       type: String,
-      required: true
+      required: true,
+      trim: true,
+      maxlength: 200
     },
     price: {
       type: Number,
       required: true,
-      default: 0
+      min: 0
+    },
+    originalPrice: {
+      type: Number,
+      min: 0
     },
     userId: {
       type: String,
@@ -23,26 +29,65 @@ const productSchema = new mongoose.Schema<ProductDoc, ProductModel>(
     },
     images: {
       image1: { type: String, required: true },
-      image2: { type: String },
-      image3: { type: String },
-      image4: { type: String }
+      image2: { type: String, default: '' },
+      image3: { type: String, default: '' },
+      image4: { type: String, default: '' }
     },
-    colors: { type: String },
-    sizes: { type: String },
+    // Electronics specific attributes
+    specifications: {
+      // Common electronics specs
+      processor: { type: String }, // For phones, laptops
+      ram: { type: String }, // Memory
+      storage: { type: String }, // Storage capacity
+      display: { type: String }, // Screen size/type
+      battery: { type: String }, // Battery capacity
+      camera: { type: String }, // Camera specs
+      connectivity: { type: String }, // WiFi, Bluetooth, etc.
+      operatingSystem: { type: String }, // iOS, Android, Windows, etc.
+      warranty: { type: String, default: '12 tháng' },
+      // Physical attributes
+      weight: { type: String },
+      dimensions: { type: String },
+      color: { type: String }
+    },
+    variants: [{
+      color: { type: String },
+      storage: { type: String },
+      price: { type: Number },
+      originalPrice: { type: Number },
+      countInStock: { type: Number, default: 0 },
+      sku: { type: String }
+    }],
     brand: {
-      type: String
+      type: String,
+      required: true,
+      enum: [
+        'Apple', 'Samsung', 'Xiaomi', 'Oppo', 'Vivo', 'Realme', 'Huawei',
+        'HP', 'Dell', 'Asus', 'Acer', 'Lenovo', 'MSI', 'MacBook',
+        'Sony', 'JBL', 'Bose', 'Sennheiser', 'Audio-Technica',
+        'Logitech', 'Razer', 'SteelSeries', 'Corsair',
+        'Other'
+      ]
     },
     category: {
       type: String,
-      required: true
+      required: true,
+      enum: [
+        'smartphone', 'laptop', 'tablet', 'smartwatch', 'headphone', 
+        'earphone', 'speaker', 'gaming', 'accessory', 'charger',
+        'case', 'screen-protector', 'power-bank', 'cable'
+      ]
     },
-    material: {
+    subCategory: {
       type: String
     },
     description: {
       type: String,
-      required: true
+      required: true,
+      maxlength: 2000
     },
+    features: [{ type: String }], // Key features list
+    inTheBox: [{ type: String }], // What's included in package
     reviews: [reviewSchema],
     numReviews: {
       type: Number,
@@ -52,12 +97,15 @@ const productSchema = new mongoose.Schema<ProductDoc, ProductModel>(
     rating: {
       type: Number,
       required: true,
-      default: 0
+      default: 0,
+      min: 0,
+      max: 5
     },
     countInStock: {
       type: Number,
       required: true,
-      default: 1
+      default: 0,
+      min: 0
     },
     isReserved: {
       type: Boolean,
@@ -66,13 +114,32 @@ const productSchema = new mongoose.Schema<ProductDoc, ProductModel>(
     },
     orderId: {
       type: String
+    },
+    // Reservation tracking fields
+    reservedAt: {
+      type: Date
+    },
+    reservedBy: {
+      type: String // User ID who reserved this product
+    },
+    // SEO and marketing
+    tags: [{ type: String }],
+    isActive: {
+      type: Boolean,
+      default: true
+    },
+    isFeatured: {
+      type: Boolean,
+      default: false
+    },
+    saleEndDate: {
+      type: Date
     }
   },
   {
     toJSON: {
       transform (doc, ret) {
         // Chuyển _id thành id, xóa _id và __v
-        ret.id = ret._id;
         ret.id = ret._id;
         delete ret._id;
         delete ret.__v;

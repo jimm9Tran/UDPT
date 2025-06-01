@@ -1,18 +1,24 @@
-# Dockerfile.dev
-FROM node:lts-alpine
+# Product Service Dockerfile
+FROM node:18-alpine
 
-# 1. Thiết lập thư mục làm việc
+# Set working directory
 WORKDIR /app
 
-# 2. Copy package.json + cài cả devDependencies để có nodemon
+# Copy package files
 COPY package*.json ./
+
+# Install dependencies
 RUN npm install
 
-# 3. Copy toàn bộ source
+# Copy source code
 COPY . .
 
-# 4. Expose port ứng dụng (theo code: chạy trên 3001)
+# Expose port
 EXPOSE 3001
 
-# 5. Chạy nodemon để dev với hot-reload
-CMD ["npm", "run", "prod"]
+# Add health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD curl -f http://localhost:3001/health || exit 1
+
+# Start the application in development mode
+CMD ["npm", "run", "start"]

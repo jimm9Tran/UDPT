@@ -62,15 +62,12 @@ export class OrderUpdatedListener extends Listener<OrderUpdatedEvent> {
       // Phát sự kiện ProductUpdated để các service khác đồng bộ trạng thái sản phẩm
       await new ProductUpdatedPublisher(this.client).publish({
         id: product.id,
-        price: product.price,
         title: product.title,
+        price: product.price,
         userId: product.userId,
         image: product.images.image1,
-        colors: product.colors,
-        sizes: product.sizes,
         brand: product.brand,
         category: product.category,
-        material: product.material,
         description: product.description,
         numReviews: product.numReviews,
         rating: product.rating,

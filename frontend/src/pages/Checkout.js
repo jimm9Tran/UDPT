@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -6,11 +6,13 @@ import { orderAPI, paymentAPI } from '../services/api';
 import { toast } from 'react-toastify';
 
 const Checkout = () => {
-  const { items, getTotalPrice, clearCart } = useCart();
+  const { items, getTotalPrice, clearCart, validateCart, commitReservation, reservationId } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
   
   const [loading, setLoading] = useState(false);
+  const [validatingCart, setValidatingCart] = useState(false);
+  const [inventoryIssues, setInventoryIssues] = useState([]);
   const [shippingInfo, setShippingInfo] = useState({
     address: '',
     city: '',
@@ -18,6 +20,34 @@ const Checkout = () => {
     notes: ''
   });
   const [paymentMethod, setPaymentMethod] = useState('vnpay');
+
+  // Validate cart when component mounts using the new validateCart function
+  const validateCartBeforeCheckout = async () => {
+    setValidatingCart(true);
+    try {
+      const validationResult = await validateCart();
+      
+      if (!validationResult.valid) {
+        setInventoryIssues(validationResult.issues || []);
+        toast.error(validationResult.message || 'Có vấn đề với giỏ hàng của bạn');
+        return false;
+      } else {
+        setInventoryIssues([]);
+        return true;
+      }
+    } catch (error) {
+      console.error('Error validating cart:', error);
+      toast.error('Không thể xác nhận giỏ hàng');
+      return false;
+    } finally {
+      setValidatingCart(false);
+    }
+  };
+
+  // Check inventory when component mounts
+  useEffect(() => {
+    checkInventoryBeforeOrder();
+  }, [items]);
 
   const handleInputChange = (e) => {
     setShippingInfo({
@@ -34,18 +64,24 @@ const Checkout = () => {
       return;
     }
 
+    // Check inventory one more time before submitting
+    const inventoryValid = await checkInventoryBeforeOrder();
+    if (!inventoryValid) {
+      toast.error('❌ Có vấn đề với tồn kho. Vui lòng kiểm tra lại giỏ hàng.');
+      return;
+    }
+
     setLoading(true);
 
     try {
       // Create order
       const orderData = {
-        items: items.map(item => ({
+        cart: items.map(item => ({
           productId: item.id,
-          quantity: item.quantity,
+          qty: item.quantity,
           price: item.price
         })),
         shippingAddress: shippingInfo,
-        totalPrice: getTotalPrice(),
         paymentMethod
       };
 
@@ -83,7 +119,17 @@ const Checkout = () => {
       }
     } catch (error) {
       console.error('Checkout error:', error);
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi đặt hàng');
+      
+      // Handle specific inventory errors
+      const errorMessage = error.response?.data?.message || error.message;
+      
+      if (errorMessage.includes('chỉ còn') || errorMessage.includes('hết hàng') || errorMessage.includes('đã được đặt trước')) {
+        toast.error(`❌ ${errorMessage}`);
+        // Suggest refreshing the cart
+        toast.info('💡 Vui lòng cập nhật giỏ hàng và thử lại');
+      } else {
+        toast.error(errorMessage || 'Có lỗi xảy ra khi đặt hàng');
+      }
     } finally {
       setLoading(false);
     }
@@ -97,6 +143,30 @@ const Checkout = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Thanh toán</h1>
+
+      {/* Inventory Warnings */}
+      {inventoryIssues.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center mb-2">
+            <svg className="h-5 w-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            <h3 className="text-sm font-medium text-red-800">
+              Không thể đặt hàng - Vấn đề tồn kho
+            </h3>
+          </div>
+          <div className="space-y-1">
+            {inventoryIssues.map((issue, index) => (
+              <div key={index} className="text-sm text-red-700">
+                • {issue.message}
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 text-sm text-red-700">
+            Vui lòng quay lại giỏ hàng để điều chỉnh số lượng sản phẩm.
+          </div>
+        </div>
+      )}
 
       <div className="lg:grid lg:grid-cols-12 lg:gap-8">
         {/* Checkout Form */}
@@ -242,14 +312,14 @@ const Checkout = () => {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || inventoryChecking || inventoryIssues.length > 0}
               className={`w-full py-3 px-4 rounded-lg font-medium text-white ${
-                loading
+                loading || inventoryChecking || inventoryIssues.length > 0
                   ? 'bg-gray-400 cursor-not-allowed'
                   : 'bg-primary-600 hover:bg-primary-700'
               } transition-colors`}
             >
-              {loading ? 'Đang xử lý...' : 'Đặt hàng'}
+              {loading ? 'Đang xử lý...' : inventoryChecking ? 'Đang kiểm tra tồn kho...' : inventoryIssues.length > 0 ? 'Không thể đặt hàng' : 'Đặt hàng'}
             </button>
           </form>
         </div>

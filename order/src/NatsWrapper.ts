@@ -26,7 +26,10 @@ class NatsWrapper {
       this.client.on('error', (err) => {
         reject(err);
       });
-    });
+    });  }
+
+  get isConnected (): boolean {
+    return this._client !== undefined;
   }
 }
 

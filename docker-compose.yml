@@ -1,0 +1,154 @@
+services:
+  # MongoDB
+  mongo:
+    image: mongo:6
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - ecommerce-network
+
+  # Redis
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - ecommerce-network
+
+  # NATS Streaming
+  nats:
+    image: nats-streaming:latest
+    container_name: nats
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    command: ["-m", "8222", "-cid", "test-cluster"]
+    networks:
+      - ecommerce-network
+
+  # User Service
+  user-service:
+    build: ./user
+    container_name: user-service
+    ports:
+      - "3001:3000"
+    env_file:
+      - .env
+    depends_on:
+      - mongo
+      - nats
+    networks:
+      - ecommerce-network
+    environment:
+      - NATS_CLIENT_ID=user
+      - MONGO_URI=${MONGO_URI_USER}
+
+  # Product Service
+  product-service:
+    build: ./product
+    container_name: product-service
+    ports:
+      - "3002:3000"
+    env_file:
+      - .env
+    depends_on:
+      - mongo
+      - nats
+    networks:
+      - ecommerce-network
+    environment:
+      - NATS_CLIENT_ID=product
+      - MONGO_URI=${MONGO_URI_PRODUCT}
+
+  # Order Service
+  order-service:
+    build: ./order
+    container_name: order-service
+    ports:
+      - "3003:3000"
+    env_file:
+      - .env
+    depends_on:
+      - mongo
+      - nats
+      - redis
+    networks:
+      - ecommerce-network
+    environment:
+      - NATS_CLIENT_ID=order
+      - MONGO_URI=${MONGO_URI_ORDER}
+
+  # Payment Service
+  payment-service:
+    build: ./payment
+    container_name: payment-service
+    ports:
+      - "3004:3000"
+    env_file:
+      - .env
+    depends_on:
+      - mongo
+      - nats
+    networks:
+      - ecommerce-network
+    environment:
+      - NATS_CLIENT_ID=payment
+      - MONGO_URI=${MONGO_URI_PAYMENT}
+
+  # Expiration Service
+  expiration-service:
+    build: ./expiration
+    container_name: expiration-service
+    env_file:
+      - .env
+    depends_on:
+      - nats
+      - redis
+    networks:
+      - ecommerce-network
+    environment:
+      - NATS_CLIENT_ID=expiration
+      - NATS_URL=nats://nats:4222
+      - NATS_CLUSTER_ID=test-cluster
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
+  # API Gateway
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "4000:4000"
+    env_file:
+      - .env
+    depends_on:
+      - user-service
+      - product-service
+      - order-service
+      - payment-service
+    networks:
+      - ecommerce-network
+
+  # Frontend
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "3005:3000"
+    env_file:
+      - .env
+    depends_on:
+      - api-gateway
+    networks:
+      - ecommerce-network
+
+volumes:
+  mongo-data:
+
+networks:
+  ecommerce-network:
+    driver: bridge

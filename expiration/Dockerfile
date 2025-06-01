@@ -1,8 +1,24 @@
-FROM node:lts-alpine
+# Expiration Service Dockerfile
+FROM node:18-alpine
 
+# Set working directory
 WORKDIR /app
-COPY package.json .
-RUN npm install --only=prod
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy source code
 COPY . .
 
-CMD ["npm", "start"]
+# Expose port
+EXPOSE 3006
+
+# Add health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD curl -f http://localhost:3006/health || exit 1
+
+# Start the application
+CMD ["npm", "run", "start"]

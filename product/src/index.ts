@@ -7,6 +7,7 @@ import { app } from './app';
 import { OrderUpdatedListener } from './events/listeners/OrderUpdatedListener';
 import { OrderCreatedListener } from './events/listeners/OrderCreatedListener';
 import { natsWrapper } from './NatsWrapper';
+import ReservationCleanupService from './services/ReservationCleanupService';
 
 const start = async (): Promise<void> => {
   console.log('Starting...');
@@ -46,6 +47,11 @@ const start = async (): Promise<void> => {
 
     await mongoose.connect(process.env.MONGO_URI_PRODUCT);
     console.log('Connected to MongoDB');
+
+    // Start reservation cleanup service
+    const cleanupService = ReservationCleanupService.getInstance();
+    cleanupService.startCleanupCron();
+    console.log('🧹 Reservation cleanup service started');
   } catch (err) {
     console.error(err);
   }

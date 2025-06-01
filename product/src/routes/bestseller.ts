@@ -1,20 +1,20 @@
 // src/routes/bestseller.ts
 
 import express, { type Request, type Response } from 'express';
-import { NotFoundError } from '@jimm9tran/common';
 
 import { Product } from '../models/product';
 
 const router = express.Router();
 
-router.get('/api/products/bestseller', async (req: Request, res: Response) => {
-  const products = await Product.find({}).sort({ rating: -1 });
-
-  if (products.length < 1) {
-    throw new NotFoundError();
+router.get('/api/bestsellers', async (req: Request, res: Response) => {
+  try {
+    const products = await Product.find({}).sort({ rating: -1, createdAt: -1 }).limit(10);
+    
+    res.status(200).json(products);
+  } catch (error) {
+    console.error('Error fetching top products:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
-
-  res.send(products);
 });
 
 export { router as bestsellerRouter };

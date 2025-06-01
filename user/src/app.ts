@@ -10,10 +10,16 @@ import { signupRouter } from './routes/signup';
 import { getUsersRouter } from './routes/get-users';
 import { updateUserRouter } from './routes/update-user';
 import { deleteUserRouter } from './routes/delete-user';
+import { createAdminRouter } from './routes/create-admin';
+import { healthRouter } from './routes/health';
 
 const app = express();
 app.set('trust proxy', true);
 app.use(express.json());
+
+// Health check first (no auth required)
+app.use(healthRouter);
+
 app.use(
   cookieSession({
     signed: false,
@@ -30,6 +36,7 @@ app.use(signoutRouter);
 app.use(signupRouter);
 app.use(updateUserRouter);
 app.use(deleteUserRouter);
+app.use(createAdminRouter);
 
 app.all('*', async (req, res) => {
   throw new NotFoundError();

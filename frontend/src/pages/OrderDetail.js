@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { orderAPI, paymentAPI } from '../services/api';
-import { Package, Clock, CheckCircle, XCircle, MapPin, Phone, User } from 'lucide-react';
+import * as Icons from 'lucide-react';
 import { toast } from 'react-toastify';
 
 const OrderDetail = () => {
@@ -9,9 +9,10 @@ const OrderDetail = () => {
   const [order, setOrder] = useState(null);
   const [payment, setPayment] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [orderEvents, setOrderEvents] = useState([]);
 
   useEffect(() => {
-    const fetchOrderAndPayment = async () => {
+    const fetchOrderDetails = async () => {
       try {
         setLoading(true);
         
@@ -27,6 +28,14 @@ const OrderDetail = () => {
           // Payment might not exist yet, that's okay
           console.log('Payment not found or not yet created');
         }
+        
+        // Fetch order events history
+        try {
+          const eventsResponse = await orderAPI.getOrderEvents(id);
+          setOrderEvents(eventsResponse.data.events || []);
+        } catch (eventsError) {
+          console.log('Order events not available', eventsError);
+        }
       } catch (error) {
         console.error('Error fetching order:', error);
         toast.error('Không thể tải thông tin đơn hàng');
@@ -36,21 +45,27 @@ const OrderDetail = () => {
     };
 
     if (id) {
-      fetchOrderAndPayment();
+      fetchOrderDetails();
     }
   }, [id]);
 
   const getStatusIcon = (status) => {
     switch (status) {
       case 'pending':
-        return <Clock className="text-yellow-500" size={24} />;
+        return <Icons.Clock className="text-yellow-500" size={24} />;
+      case 'processing':
+        return <Icons.Package className="text-blue-500" size={24} />;
+      case 'shipped':
+        return <Icons.Truck className="text-indigo-500" size={24} />;
       case 'completed':
       case 'delivered':
-        return <CheckCircle className="text-green-500" size={24} />;
+        return <Icons.CheckCircle className="text-green-500" size={24} />;
       case 'cancelled':
-        return <XCircle className="text-red-500" size={24} />;
+        return <Icons.XCircle className="text-red-500" size={24} />;
+      case 'failed':
+        return <Icons.AlertTriangle className="text-red-500" size={24} />;
       default:
-        return <Package className="text-gray-500" size={24} />;
+        return <Icons.Package className="text-gray-500" size={24} />;
     }
   };
 
@@ -58,6 +73,10 @@ const OrderDetail = () => {
     switch (status) {
       case 'pending':
         return 'Đang xử lý';
+      case 'processing':
+        return 'Đang chuẩn bị';
+      case 'shipped':
+        return 'Đang vận chuyển';
       case 'completed':
         return 'Hoàn thành';
       case 'delivered':
@@ -66,6 +85,8 @@ const OrderDetail = () => {
         return 'Đã hủy';
       case 'paid':
         return 'Đã thanh toán';
+      case 'failed':
+        return 'Thất bại';
       default:
         return status;
     }
@@ -75,11 +96,16 @@ const OrderDetail = () => {
     switch (status) {
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
+      case 'processing':
+        return 'bg-blue-100 text-blue-800';
+      case 'shipped':
+        return 'bg-indigo-100 text-indigo-800';
       case 'completed':
       case 'delivered':
       case 'paid':
         return 'bg-green-100 text-green-800';
       case 'cancelled':
+      case 'failed':
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -97,6 +123,51 @@ const OrderDetail = () => {
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getEventIcon = (type) => {
+    switch (type) {
+      case 'ORDER_CREATED':
+        return <Icons.Package className="text-blue-500" />;
+      case 'PAYMENT_RECEIVED':
+      case 'PAYMENT_COMPLETED':
+        return <Icons.CreditCard className="text-green-500" />;
+      case 'PAYMENT_FAILED':
+        return <Icons.AlertTriangle className="text-red-500" />;
+      case 'ORDER_PROCESSING':
+        return <Icons.Activity className="text-purple-500" />;
+      case 'ORDER_SHIPPED':
+        return <Icons.Truck className="text-indigo-500" />;
+      case 'ORDER_DELIVERED':
+        return <Icons.CheckCircle className="text-green-500" />;
+      case 'ORDER_CANCELLED':
+        return <Icons.XCircle className="text-red-500" />;
+      default:
+        return <Icons.Calendar className="text-gray-500" />;
+    }
+  };
+
+  const getEventTitle = (type) => {
+    switch (type) {
+      case 'ORDER_CREATED':
+        return 'Đơn hàng được tạo';
+      case 'PAYMENT_RECEIVED':
+        return 'Đã nhận thanh toán';
+      case 'PAYMENT_COMPLETED':
+        return 'Thanh toán hoàn tất';
+      case 'PAYMENT_FAILED':
+        return 'Thanh toán thất bại';
+      case 'ORDER_PROCESSING':
+        return 'Đang xử lý đơn hàng';
+      case 'ORDER_SHIPPED':
+        return 'Đơn hàng đã được gửi đi';
+      case 'ORDER_DELIVERED':
+        return 'Đơn hàng đã được giao';
+      case 'ORDER_CANCELLED':
+        return 'Đơn hàng đã bị hủy';
+      default:
+        return type.replace(/_/g, ' ').toLowerCase();
     }
   };
 
@@ -198,14 +269,14 @@ const OrderDetail = () => {
               {order.shippingAddress && (
                 <>
                   <div className="flex items-start space-x-2">
-                    <User className="text-gray-400 mt-1" size={16} />
+                    <Icons.User className="text-gray-400 mt-1" size={16} />
                     <div>
                       <p className="font-medium">{order.user?.name || 'Khách hàng'}</p>
                       <p className="text-sm text-gray-600">{order.user?.email}</p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-2">
-                    <MapPin className="text-gray-400 mt-1" size={16} />
+                    <Icons.MapPin className="text-gray-400 mt-1" size={16} />
                     <div>
                       <p className="text-gray-900">
                         {order.shippingAddress.address}, {order.shippingAddress.city}
@@ -213,7 +284,7 @@ const OrderDetail = () => {
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Phone className="text-gray-400" size={16} />
+                    <Icons.Phone className="text-gray-400" size={16} />
                     <p className="text-gray-900">{order.shippingAddress.phone}</p>
                   </div>
                   {order.shippingAddress.notes && (
@@ -303,6 +374,66 @@ const OrderDetail = () => {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Order Timeline */}
+      <div className="mt-8 bg-white rounded-lg shadow-md p-6">
+        <h2 className="text-xl font-semibold text-gray-900 mb-6">
+          Lịch sử đơn hàng
+        </h2>
+        
+        {orderEvents && orderEvents.length > 0 ? (
+          <div className="relative">
+            {/* Timeline line */}
+            <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+            
+            {/* Timeline events */}
+            <div className="space-y-8 relative pl-12">
+              {orderEvents.map((event, index) => (
+                <div key={index} className="relative">
+                  {/* Timeline dot */}
+                  <div className="absolute left-[-2.5rem] p-2 rounded-full bg-white shadow-md border border-gray-100">
+                    {getEventIcon(event.type)}
+                  </div>
+                  
+                  {/* Event content */}
+                  <div className="bg-white rounded-lg p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                    <h3 className="font-medium text-gray-900">
+                      {getEventTitle(event.type)}
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {new Date(event.timestamp).toLocaleString('vi-VN', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                    {event.data && (
+                      <div className="mt-2 text-sm">
+                        {typeof event.data === 'object' 
+                          ? Object.entries(event.data).map(([key, value]) => (
+                              <div key={key} className="flex justify-between py-1 border-b border-dashed border-gray-100 last:border-0">
+                                <span className="text-gray-600 capitalize">{key.replace(/([A-Z])/g, ' $1').toLowerCase()}:</span>
+                                <span className="font-medium">{String(value)}</span>
+                              </div>
+                            ))
+                          : <p className="text-gray-600">{String(event.data)}</p>
+                        }
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <Activity size={48} className="mx-auto text-gray-300 mb-3" />
+            <p className="text-gray-500">Không có dữ liệu lịch sử đơn hàng</p>
+          </div>
+        )}
       </div>
     </div>
   );

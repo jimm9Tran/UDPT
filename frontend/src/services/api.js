@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:4000/api';
+const API_HOST = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+const API_BASE_URL = `${API_HOST}/api`;
 
 // Create axios instance with default config
 const api = axios.create({
@@ -11,7 +12,19 @@ const api = axios.create({
   },
 });
 
-// Add auth token to requests
+// Service URLs - Direct microservice ports (for development)
+const DIRECT_SERVICE_PORTS = {
+  user: 3001,
+  product: 3002,
+  order: 3003,
+  payment: 3004,
+  expiration: 3005 // internal service
+};
+
+// Use API Gateway by default, fallback to direct service if needed
+const USE_API_GATEWAY = true;
+
+// Add authorization interceptor
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -39,17 +52,121 @@ export const authAPI = {
   signin: (credentials) => api.post('/users/signin', credentials),
   signout: () => api.post('/users/signout'),
   getCurrentUser: () => api.get('/users/currentuser'),
+  updateProfile: (userData) => api.put('/users/profile', userData),
+  changePassword: (passwordData) => api.put('/users/password', passwordData),
+  refreshToken: () => api.post('/users/refresh-token'),
+  forgotPassword: (email) => api.post('/users/forgot-password', { email }),
+  resetPassword: (token, password) => api.post('/users/reset-password', { token, password }),
 };
 
 // Product API
 export const productAPI = {
   getAll: () => api.get('/products'),
   getById: (id) => api.get(`/products/${id}`),
-  getBestsellers: () => api.get('/products/bestseller'),
-  create: (productData) => api.post('/products', productData),
-  update: (id, productData) => api.put(`/products/${id}`, productData),
+  getBestsellers: () => api.get('/products/bestsellers'),
+  getCategories: () => api.get('/products/categories'),
+  getByCategory: (category) => api.get(`/products/category/${category}`),
+  searchProducts: (query) => api.get(`/products/search?q=${query}`),
+  create: (productData, images = []) => {
+    const formData = new FormData();
+    
+    // Add product data - handle complex objects properly
+    Object.keys(productData).forEach(key => {
+      if (productData[key] !== undefined && productData[key] !== null) {
+        // For complex objects and arrays, stringify them
+        if (typeof productData[key] === 'object' && !Array.isArray(productData[key])) {
+          formData.append(key, JSON.stringify(productData[key]));
+        } else if (Array.isArray(productData[key])) {
+          formData.append(key, JSON.stringify(productData[key]));
+        } else {
+          formData.append(key, productData[key]);
+        }
+      }
+    });
+    
+    // Add images - filter only File objects (new uploads)
+    images.forEach((image) => {
+      if (image instanceof File) {
+        formData.append('images', image);
+      }
+    });
+    
+    return api.post('/products', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+  update: (id, productData, images = []) => {
+    const formData = new FormData();
+    
+    // Add product data - handle complex objects properly
+    Object.keys(productData).forEach(key => {
+      if (productData[key] !== undefined && productData[key] !== null) {
+        // For complex objects and arrays, stringify them
+        if (typeof productData[key] === 'object' && !Array.isArray(productData[key])) {
+          formData.append(key, JSON.stringify(productData[key]));
+        } else if (Array.isArray(productData[key])) {
+          formData.append(key, JSON.stringify(productData[key]));
+        } else {
+          formData.append(key, productData[key]);
+        }
+      }
+    });
+
+    // Separate new files and existing URLs
+    const newFiles = images.filter(image => image instanceof File);
+    const existingUrls = images.filter(image => typeof image === 'string');
+    
+    // Add new images if provided
+    newFiles.forEach((image) => {
+      formData.append('images', image);
+    });
+    
+    // Add existing image URLs
+    existingUrls.forEach((url, index) => {
+      formData.append(`existingImages[${index}]`, url);
+    });
+    
+    return api.patch(`/products/${id}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
   delete: (id) => api.delete(`/products/${id}`),
   createReview: (productId, reviewData) => api.post(`/products/${productId}/reviews`, reviewData),
+  
+  // Inventory checking functions
+  checkInventory: (productId) => {
+    // Single product inventory check
+    return api.get(`/products/${productId}/inventory`);
+  },
+  checkMultipleInventory: (productIds) => {
+    // Multiple products inventory check
+    return api.post('/products/check-inventory', { productIds });
+  },
+  checkCartInventory: (cartItems) => {
+    // Direct cart format for cart page
+    const cart = cartItems.map(item => ({
+      productId: item.productId,
+      quantity: item.quantity
+    }));
+    
+    return api.post('/products/check-cart-inventory', { cart });
+  },
+  reserveInventory: (items) => {
+    // Reserve inventory for checkout
+    return api.post('/products/reserve-inventory', { items });
+  },
+  releaseInventory: (reservationId) => {
+    // Release previously reserved inventory
+    return api.post('/products/release-inventory', { reservationId });
+  },
+  commitInventory: (reservationId) => {
+    // Commit reserved inventory after payment
+    return api.post('/products/commit-inventory', { reservationId });
+  },
 };
 
 // Order API
@@ -60,6 +177,10 @@ export const orderAPI = {
   getAllOrders: () => api.get('/orders/all'),
   cancel: (id) => api.put(`/orders/${id}/cancel`),
   deliver: (id) => api.put(`/orders/deliver/${id}`),
+  updateStatus: (id, status) => api.put(`/orders/${id}/status`, { status }),
+  completeOrder: (id) => api.put(`/orders/${id}/complete`),
+  getOrderEvents: (id) => api.get(`/orders/${id}/events`),
+  reserveInventory: (items) => api.post('/orders/reserve-inventory', { items }),
 };
 
 // Payment API
@@ -68,6 +189,46 @@ export const paymentAPI = {
   createCOD: (paymentData) => api.post('/payments/cod', paymentData),
   confirmCOD: (orderId) => api.post(`/payments/cod/confirm/${orderId}`),
   getPayment: (orderId) => api.get(`/payments/order/${orderId}`),
+  processPayment: (orderId, paymentType, paymentData) => 
+    api.post(`/payments/process/${orderId}`, { type: paymentType, ...paymentData }),
+  getPaymentStatus: (orderId) => api.get(`/payments/status/${orderId}`),
+  refundPayment: (orderId) => api.post(`/payments/refund/${orderId}`),
+};
+
+// Health API
+export const healthAPI = {
+  check: () => api.get('/health'), // Use relative URL via proxy
+  checkServices: async () => {
+    try {
+      // Use the comprehensive health check endpoint that actually tests services
+      const healthResponse = await api.get('/health/services');
+      return { data: healthResponse.data };
+    } catch (error) {
+      console.error('Health check failed:', error);
+      // Return default structure if health check fails
+      return {
+        data: {
+          services: {
+            user: { status: 'unknown', url: 'http://localhost:3001', error: 'Health check failed' },
+            product: { status: 'unknown', url: 'http://localhost:3002', error: 'Health check failed' },
+            order: { status: 'unknown', url: 'http://localhost:3003', error: 'Health check failed' },
+            payment: { status: 'unknown', url: 'http://localhost:3004', error: 'Health check failed' }
+          }
+        }
+      };
+    }
+  }
+};
+
+// Helper function to get port for service
+const getPortForService = (serviceName) => {
+  const portMap = {
+    user: 3000,
+    product: 3001,
+    order: 3002,
+    payment: 3003
+  };
+  return portMap[serviceName] || 3000;
 };
 
 export default api;
