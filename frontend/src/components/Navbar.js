@@ -3,37 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import * as Icons from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
-import { healthAPI } from '../services/api';
 
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const { getTotalItems } = useCart();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [servicesStatus, setServicesStatus] = useState({});
-  const [showStatus, setShowStatus] = useState(false);
-  const [statusLoading, setStatusLoading] = useState(false);
-
-  // Check services health
-  const checkServicesHealth = async () => {
-    setStatusLoading(true);
-    try {
-      const response = await healthAPI.checkServices();
-      setServicesStatus(response.data.services);
-    } catch (error) {
-      console.error('Failed to check services health:', error);
-    } finally {
-      setStatusLoading(false);
-    }
-  };
-
-  // Toggle services status dropdown
-  const toggleServicesStatus = () => {
-    if (!showStatus) {
-      checkServicesHealth();
-    }
-    setShowStatus(!showStatus);
-  };
 
   const handleLogout = async () => {
     await logout();
@@ -79,65 +54,6 @@ const Navbar = () => {
 
           {/* Right side */}
           <div className="hidden md:flex items-center space-x-4">
-            {/* Services Status */}
-            <div className="relative">
-              <button 
-                className="p-2 text-gray-700 hover:text-primary-600 transition-colors hover:bg-primary-50 rounded-lg flex items-center"
-                onClick={toggleServicesStatus}
-              >
-                <Icons.Server size={22} className="mr-1" />
-                <span className="text-sm font-medium">Services</span>
-              </button>
-              
-              {/* Services Status Dropdown */}
-              {showStatus && (
-                <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-lg border border-gray-100 p-4 z-50">
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className="text-sm font-semibold text-gray-900">Microservices Status</h3>
-                    <button 
-                      onClick={checkServicesHealth}
-                      className="text-primary-600 hover:text-primary-700 text-xs font-medium flex items-center"
-                      disabled={statusLoading}
-                    >
-                      <Icons.Activity size={14} className="mr-1" />
-                      {statusLoading ? 'Refreshing...' : 'Refresh'}
-                    </button>
-                  </div>
-                  
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {Object.entries(servicesStatus).length > 0 ? (
-                      Object.entries(servicesStatus).map(([name, service]) => (
-                        <div key={name} className="flex items-center justify-between p-2 rounded-lg bg-gray-50 hover:bg-gray-100">
-                          <div className="flex items-center">
-                            {service.status === 'healthy' ? (
-                              <Icons.CheckCircle size={16} className="text-green-500 mr-2" />
-                            ) : (
-                              <Icons.AlertTriangle size={16} className="text-red-500 mr-2" />
-                            )}
-                            <span className="text-sm font-medium capitalize">{name}</span>
-                          </div>
-                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                            service.status === 'healthy' 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {service.status === 'healthy' ? 'Online' : 'Offline'}
-                          </span>
-                        </div>
-                      ))
-                    ) : statusLoading ? (
-                      <div className="text-center py-3">
-                        <div className="animate-spin h-5 w-5 border-2 border-primary-600 border-t-transparent rounded-full mx-auto mb-2"></div>
-                        <p className="text-xs text-gray-500">Checking services...</p>
-                      </div>
-                    ) : (
-                      <p className="text-xs text-gray-500 text-center py-3">No service information available</p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
             {/* Cart */}
             <Link 
               to="/cart" 

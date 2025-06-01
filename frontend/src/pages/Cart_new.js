@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { productAPI } from '../services/api';
@@ -10,7 +10,7 @@ const Cart = () => {
   const [isCheckingInventory, setIsCheckingInventory] = useState(false);
 
   // Function to check cart inventory
-  const checkCartInventory = useCallback(async () => {
+  const checkCartInventory = async () => {
     if (items.length === 0) return;
     
     setIsCheckingInventory(true);
@@ -32,12 +32,12 @@ const Cart = () => {
     } finally {
       setIsCheckingInventory(false);
     }
-  }, [items]);
+  };
 
   // Check inventory when component mounts and when items change
   useEffect(() => {
     checkCartInventory();
-  }, [items, checkCartInventory]);
+  }, [items]);
 
   // Get warning for specific item
   const getItemWarning = (itemId) => {

@@ -88,13 +88,17 @@ const AdminProducts = () => {
       setLoading(true);
       setIsRefreshing(true);
       const response = await productAPI.getAll();
-      setProducts(response.data);
+      
+      // Handle different response structures
+      const productsData = response.data.products || response.data || [];
+      setProducts(Array.isArray(productsData) ? productsData : []);
       
       // Also check service health when fetching products
       checkProductServiceHealth();
     } catch (error) {
       console.error('Error fetching products:', error);
       toast.error('Lỗi khi tải danh sách sản phẩm');
+      setProducts([]); // Set empty array on error
     } finally {
       setLoading(false);
       setIsRefreshing(false);
@@ -239,6 +243,11 @@ const AdminProducts = () => {
 
   // Filter and sort products
   const filteredProducts = useMemo(() => {
+    // Ensure products is an array before filtering
+    if (!Array.isArray(products)) {
+      return [];
+    }
+    
     return products
       .filter(product => {
         // Search term filter

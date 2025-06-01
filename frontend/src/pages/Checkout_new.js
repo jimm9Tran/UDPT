@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -30,7 +30,7 @@ const Checkout = () => {
   const [paymentMethod, setPaymentMethod] = useState('vnpay');
 
   // Validate cart when component mounts using the validateCart function
-  const validateCartBeforeCheckout = useCallback(async () => {
+  const validateCartBeforeCheckout = async () => {
     setValidatingCart(true);
     try {
       const validationResult = await validateCart();
@@ -50,7 +50,7 @@ const Checkout = () => {
     } finally {
       setValidatingCart(false);
     }
-  }, [validateCart]);
+  };
 
   // Validate cart when component mounts
   useEffect(() => {
@@ -59,7 +59,7 @@ const Checkout = () => {
     } else {
       validateCartBeforeCheckout();
     }
-  }, [items, navigate, validateCartBeforeCheckout]);
+  }, [items, navigate]);
 
   const handleInputChange = (e) => {
     setShippingInfo({
@@ -421,12 +421,9 @@ const Checkout = () => {
                 <div className="text-sm text-gray-600">
                   <p className="mb-2">
                     Đặt hàng đồng nghĩa với việc bạn đồng ý tuân thủ các
-                    <button 
-                      onClick={() => window.open('/terms-of-service', '_blank')}
-                      className="text-primary-600 hover:text-primary-500 ml-1 underline bg-transparent border-none cursor-pointer"
-                    >
+                    <a href="#" className="text-primary-600 hover:text-primary-500 ml-1">
                       Điều khoản dịch vụ
-                    </button>
+                    </a>
                     .
                   </p>
                   <p>

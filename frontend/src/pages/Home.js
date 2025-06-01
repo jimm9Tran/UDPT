@@ -20,7 +20,8 @@ const Home = () => {
         
         // Fetch featured products (latest products)
         const productsResponse = await productAPI.getAll();
-        setFeaturedProducts(productsResponse.data.slice(0, 8));
+        const productsData = productsResponse.data.products || productsResponse.data || [];
+        setFeaturedProducts(Array.isArray(productsData) ? productsData.slice(0, 8) : []);
         
       } catch (error) {
         console.error('Error fetching data:', error);

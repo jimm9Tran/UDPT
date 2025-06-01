@@ -17,7 +17,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
-import Cart from './pages/Cart_new';
+import Cart from './pages/Cart';
 import Checkout from './pages/Checkout_new';
 import Orders from './pages/Orders';
 import OrderDetail from './pages/OrderDetail';
@@ -35,7 +35,6 @@ function App() {
             <main className="pt-16">
               <Routes>
                 <Route path="/" element={<Home />} />
-                <Route path="/about" element={<About />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/products" element={<Products />} />

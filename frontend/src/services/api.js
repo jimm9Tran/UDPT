@@ -189,7 +189,8 @@ export const healthAPI = {
   checkServices: async () => {
     try {
       // Use the comprehensive health check endpoint that actually tests services
-      const healthResponse = await api.get('/health/services');
+      // Need to call the health endpoint directly without /api prefix
+      const healthResponse = await axios.get(`${API_HOST}/health/services`);
       return { data: healthResponse.data };
     } catch (error) {
       console.error('Health check failed:', error);
@@ -197,10 +198,10 @@ export const healthAPI = {
       return {
         data: {
           services: {
-            user: { status: 'unknown', url: 'http://localhost:3001', error: 'Health check failed' },
-            product: { status: 'unknown', url: 'http://localhost:3002', error: 'Health check failed' },
-            order: { status: 'unknown', url: 'http://localhost:3003', error: 'Health check failed' },
-            payment: { status: 'unknown', url: 'http://localhost:3004', error: 'Health check failed' }
+            user: { status: 'unknown', url: 'http://user-service:3000', error: 'Health check failed' },
+            product: { status: 'unknown', url: 'http://product-service:3000', error: 'Health check failed' },
+            order: { status: 'unknown', url: 'http://order-service:3000', error: 'Health check failed' },
+            payment: { status: 'unknown', url: 'http://payment-service:3000', error: 'Health check failed' }
           }
         }
       };

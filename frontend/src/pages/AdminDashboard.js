@@ -23,6 +23,64 @@ const AdminDashboard = () => {
   const [healthStatuses, setHealthStatuses] = useState({});
   const [timeRange, setTimeRange] = useState('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastHealthCheck, setLastHealthCheck] = useState(new Date());
+
+  // Auto-refresh health status every 30 seconds
+  useEffect(() => {
+    const healthCheckInterval = setInterval(async () => {
+      try {
+        console.log('🔄 Auto-refreshing health status...');
+        const healthResponse = await healthAPI.checkServices();
+        console.log('✅ Auto-refresh health response:', healthResponse.data);
+        setHealthStatuses(healthResponse.data.services);
+        setLastHealthCheck(new Date());
+      } catch (error) {
+        console.error('❌ Auto health check failed:', error);
+      }
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(healthCheckInterval);
+  }, []);
+
+  // Debug helper
+  const debugHealthStatus = () => {
+    console.log('🐛 Current healthStatuses state:', healthStatuses);
+    console.log('🐛 Last health check:', lastHealthCheck);
+    console.log('🐛 Services count:', Object.keys(healthStatuses).length);
+    console.log('🐛 Healthy services:', Object.values(healthStatuses).filter(s => s.status === 'healthy').length);
+  };
+
+  // Separate health check function
+  const fetchHealthStatus = useCallback(async () => {
+    try {
+      console.log('🔍 Fetching health statuses...');
+      const healthResponse = await healthAPI.checkServices();
+      console.log('✅ Health response:', healthResponse.data);
+      
+      if (healthResponse.data && healthResponse.data.services) {
+        setHealthStatuses(healthResponse.data.services);
+        setLastHealthCheck(new Date());
+        console.log('✅ Health statuses updated successfully');
+      } else {
+        console.error('❌ Invalid health response structure:', healthResponse);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching health statuses:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data
+      });
+      
+      // Set fallback status - keeping the same structure as API response
+      setHealthStatuses({
+        user: { status: 'unknown', url: 'http://user-service:3000', error: 'Health check failed' },
+        product: { status: 'unknown', url: 'http://product-service:3000', error: 'Health check failed' },
+        order: { status: 'unknown', url: 'http://order-service:3000', error: 'Health check failed' },
+        payment: { status: 'unknown', url: 'http://payment-service:3000', error: 'Health check failed' }
+      });
+    }
+  }, []);
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -35,7 +93,8 @@ const AdminDashboard = () => {
 
       // Fetch all products
       const productsResponse = await productAPI.getAll();
-      const allProducts = productsResponse.data;
+      const productsData = productsResponse.data.products || productsResponse.data || [];
+      const allProducts = Array.isArray(productsData) ? productsData : [];
 
       // Filter orders by time range
       let filteredOrders = allOrders;
@@ -93,19 +152,6 @@ const AdminDashboard = () => {
         recentSales
       });
 
-      // Fetch health statuses
-      try {
-        const healthResponse = await healthAPI.checkServices();
-        setHealthStatuses(healthResponse.data.services);
-      } catch (error) {
-        console.error('Error fetching health statuses:', error);
-        setHealthStatuses({
-          user: { status: 'unknown', url: 'http://localhost:3000' },
-          product: { status: 'unknown', url: 'http://localhost:3001' },
-          order: { status: 'unknown', url: 'http://localhost:3002' },
-          payment: { status: 'unknown', url: 'http://localhost:3003' }
-        });
-      }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -116,11 +162,13 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
-  }, [fetchDashboardData]);
+    fetchHealthStatus(); // Call health check separately
+  }, [fetchDashboardData, fetchHealthStatus]);
 
   const refreshData = () => {
     setIsRefreshing(true);
     fetchDashboardData();
+    fetchHealthStatus();
   };
 
   const getStatusColor = (status) => {
@@ -220,44 +268,105 @@ const AdminDashboard = () => {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-gray-900 flex items-center">
                 <Icons.Activity className="w-5 h-5 mr-2 text-primary-600" />
-                Trạng thái hệ thống
+                Trạng thái hệ thống Microservices
               </h2>
-              <div className="flex items-center space-x-2">
-                <div className={`w-3 h-3 rounded-full ${uptimePercent >= 75 ? 'bg-green-500' : uptimePercent >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
-                <span className="text-sm font-medium text-gray-700">
-                  Uptime: {uptimePercent}%
-                </span>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <div className={`w-3 h-3 rounded-full ${uptimePercent >= 75 ? 'bg-green-500' : uptimePercent >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
+                  <span className="text-sm font-medium text-gray-700">
+                    Uptime: {uptimePercent}%
+                  </span>
+                </div>
+                <button
+                  onClick={() => {
+                    fetchHealthStatus();
+                  }}
+                  disabled={isRefreshing}
+                  className="flex items-center px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                >
+                  <Icons.RefreshCw className={`w-4 h-4 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  Làm mới
+                </button>
+                <button
+                  onClick={debugHealthStatus}
+                  className="flex items-center px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+                >
+                  <Icons.Bug className="w-4 h-4 mr-1" />
+                  Debug
+                </button>
               </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {Object.entries(healthStatuses).map(([serviceName, serviceInfo]) => (
-                <div key={serviceName} className="p-4 border border-gray-200 rounded-lg">
-                  <div className="flex items-center justify-between">
+                <div key={serviceName} className={`p-4 border-2 rounded-lg transition-all ${
+                  serviceInfo.status === 'healthy' 
+                    ? 'border-green-200 bg-green-50' 
+                    : 'border-red-200 bg-red-50'
+                }`}>
+                  <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center">
                       <Icons.Server className="w-5 h-5 text-gray-400 mr-2" />
-                      <span className="font-medium text-gray-900 capitalize">
-                        {serviceName}
+                      <span className="font-semibold text-gray-900 capitalize">
+                        {serviceName} Service
                       </span>
                     </div>
                     <div className={`text-sm font-medium ${getHealthColor(serviceInfo.status)}`}>
                       {serviceInfo.status === 'healthy' ? (
-                        <Icons.CheckCircle className="w-4 h-4" />
+                        <Icons.CheckCircle className="w-5 h-5" />
                       ) : (
-                        <Icons.XCircle className="w-4 h-4" />
+                        <Icons.XCircle className="w-5 h-5" />
                       )}
                     </div>
                   </div>
-                  <div className="mt-2">
-                    <span className={`text-xs ${getHealthColor(serviceInfo.status)}`}>
+                  <div className="space-y-2">
+                    <div className={`text-sm font-medium ${getHealthColor(serviceInfo.status)}`}>
                       {getHealthText(serviceInfo.status)}
-                    </span>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {serviceInfo.url}
                     </div>
+                    <div className="text-xs text-gray-500">
+                      URL: {serviceInfo.url}
+                    </div>
+                    {serviceInfo.response && serviceInfo.response.uptime && (
+                      <div className="text-xs text-gray-600">
+                        Uptime: {Math.floor(serviceInfo.response.uptime / 3600)}h {Math.floor((serviceInfo.response.uptime % 3600) / 60)}m
+                      </div>
+                    )}
+                    {serviceInfo.response && serviceInfo.response.timestamp && (
+                      <div className="text-xs text-gray-500">
+                        Last check: {new Date(serviceInfo.response.timestamp).toLocaleTimeString('vi-VN')}
+                      </div>
+                    )}
+                    {serviceInfo.error && (
+                      <div className="text-xs text-red-500 mt-1">
+                        Error: {serviceInfo.error}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Overall System Status */}
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <Icons.Monitor className="w-5 h-5 text-gray-600 mr-2" />
+                  <span className="font-medium text-gray-900">Tổng quan hệ thống</span>
+                  {lastHealthCheck && (
+                    <span className="ml-3 text-xs text-gray-500">
+                      Cập nhật lần cuối: {lastHealthCheck.toLocaleTimeString('vi-VN')}
+                    </span>
+                  )}
+                </div>
+                <div className="text-right">
+                  <div className={`text-lg font-bold ${uptimePercent >= 75 ? 'text-green-600' : uptimePercent >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
+                    {Object.values(healthStatuses).filter(s => s.status === 'healthy').length}/{Object.keys(healthStatuses).length} Services Online
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    System Status: {uptimePercent >= 75 ? 'Healthy' : uptimePercent >= 50 ? 'Degraded' : 'Critical'}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

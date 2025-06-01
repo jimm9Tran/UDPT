@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import * as Icons from 'lucide-react';
 import { productAPI } from '../services/api';
 import { useCart } from '../contexts/CartContext';
