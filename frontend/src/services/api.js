@@ -16,7 +16,11 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
+    // Set both Authorization header AND cookie for compatibility
     config.headers.Authorization = `Bearer ${token}`;
+    
+    // Also set the token as a cookie in the proper format that backend expects
+    document.cookie = `session=${JSON.stringify({ jwt: token })}; path=/; SameSite=Lax`;
   }
   return config;
 });
