@@ -10,15 +10,18 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install
 
+# Install curl for healthcheck
+RUN apk add --no-cache curl
+
 # Copy source code
 COPY . .
 
 # Expose port
-EXPOSE 3001
+EXPOSE 3000
 
 # Add health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD curl -f http://localhost:3001/health || exit 1
+  CMD curl -f http://localhost:3000/api/health || exit 1
 
 # Start the application in development mode
 CMD ["npm", "run", "start"]

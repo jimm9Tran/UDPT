@@ -3,9 +3,10 @@
 import express from 'express';
 import { json } from 'body-parser';
 import cookieSession from 'cookie-session';
+import 'express-async-errors';
 
 import { createProductRouter } from './routes/create-product';
-import { currentUser } from '@jimm9tran/common';
+import { currentUser, errorHandler } from '@jimm9tran/common';
 import { getAllProductsRouter } from './routes/get-all-products';
 import { getProductRouter } from './routes/get-product';
 import { deleteProductRouter } from './routes/delete-product';
@@ -15,6 +16,9 @@ import { healthRouter } from './routes/product-health';
 import { checkInventoryRouter } from './routes/check-inventory';
 import { cleanupReservationsRouter } from './routes/cleanup-reservations';
 import { seedProductsRouter } from './routes/seed-products';
+import { reserveInventoryRouter } from './routes/reserve-inventory';
+import { releaseInventoryRouter } from './routes/release-inventory';
+import { commitInventoryRouter } from './routes/commit-inventory';
 
 const app = express();
 app.use(json());
@@ -31,7 +35,7 @@ app.use(
   })
 );
 
-// app.use(currentUser)  // Temporarily disabled for testing
+app.use(currentUser);
 
 app.use(bestsellerRouter); // Đặt trước getProductRouter
 app.use(createProductRouter);
@@ -41,6 +45,9 @@ app.use(deleteProductRouter);
 app.use(updateProductRouter);
 app.use(checkInventoryRouter);
 app.use(cleanupReservationsRouter);
+app.use(reserveInventoryRouter);
+app.use(releaseInventoryRouter);
+app.use(commitInventoryRouter);
 app.use(seedProductsRouter);
 app.use(healthRouter)
 
@@ -48,5 +55,8 @@ app.use(healthRouter)
 app.all('*', async (req, res) => {
   res.status(404).send({ message: 'Not Found' });
 });
+
+// Error handling middleware
+app.use(errorHandler);
 
 export { app };

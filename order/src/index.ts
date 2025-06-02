@@ -52,8 +52,7 @@ const start = async (): Promise<void> => {
     console.log('Connected to MongoDB');
   } catch (err) {
     console.error(err);
-  }
-  const port = 3000;
+  }  const port = 3000;
   app.listen(port, () => {
     console.log(`Order server: Listening on port ${port}`);
   });

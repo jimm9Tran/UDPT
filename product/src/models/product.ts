@@ -75,7 +75,10 @@ const productSchema = new mongoose.Schema<ProductDoc, ProductModel>(
       enum: [
         'smartphone', 'laptop', 'tablet', 'smartwatch', 'headphone', 
         'earphone', 'speaker', 'gaming', 'accessory', 'charger',
-        'case', 'screen-protector', 'power-bank', 'cable'
+        'case', 'screen-protector', 'power-bank', 'cable',
+        // Vietnamese categories
+        'Laptop', 'Điện thoại', 'Tablet', 'Tai nghe', 'Loa', 
+        'Smartwatch', 'Phụ kiện', 'PC & Linh kiện', 'Gaming', 'Apple', 'Khác'
       ]
     },
     subCategory: {

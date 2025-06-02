@@ -5,10 +5,39 @@ services:
   mongo:
     image: mongo:6
     restart: unless-stopped
+    command: mongod --replSet rs0 --bind_ip_all
     volumes:
       - mongo-data:/data/db
     ports:
       - "27017:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MongoDB Setup (chỉ chạy một lần để khởi tạo replica set)
+  mongo-setup:
+    image: mongo:6
+    depends_on:
+      mongo:
+        condition: service_healthy
+    command: |
+      mongosh --host mongo:27017 --eval "
+      try {
+        rs.status();
+        print('Replica set đã được khởi tạo');
+      } catch(e) {
+        print('Khởi tạo replica set...');
+        rs.initiate({
+          _id: 'rs0',
+          members: [
+            { _id: 0, host: 'mongo:27017' }
+          ]
+        });
+        print('Replica set đã được khởi tạo thành công');
+      }
+      "
 
   # --- NATS Streaming ---
   nats:
@@ -69,8 +98,10 @@ services:
       context: ./product
       dockerfile: Dockerfile
     command: npm run start
+    env_file:
+      - .env
     environment:
-      - PORT=3001
+      - PORT=3000
       - MONGO_URI_PRODUCT=${MONGO_URI_PRODUCT}
       - NATS_CLUSTER_ID=${NATS_CLUSTER_ID}
       - NATS_CLIENT_ID=${NATS_CLIENT_ID}_product

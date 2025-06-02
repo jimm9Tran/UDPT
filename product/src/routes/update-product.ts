@@ -8,21 +8,25 @@ import { Product } from '../models/product';
 import { ProductUpdatedPublisher } from '../events/publishers/ProductUpdatedPublisher';
 import { natsWrapper } from '../NatsWrapper';
 import type { ProductAttrs } from '../types/product';
-import { uploadImages, handleUploadError } from '../middleware/upload';
+import { conditionalUploadImages, handleUploadError } from '../middleware/upload';
 import { ImageUploadUtil } from '../utils/image-upload';
 
 const router = express.Router();
 
 router.patch(
   '/api/products/:id',
-  // requireAuth,  // Temporarily disabled for testing
-  // adminUser,    // Temporarily disabled for testing
-  uploadImages,
+  requireAuth,
+  adminUser,
+  conditionalUploadImages,
   handleUploadError,
   // Kiểm tra id có đúng định dạng MongoDB ObjectId không
   [param('id').isMongoId().withMessage('Id sản phẩm không hợp lệ')],
   validateRequest,
   async (req: Request, res: Response) => {
+    // Support backward compatibility for 'name' field
+    if (!req.body.title && req.body.name) {
+      req.body.title = req.body.name;
+    }
     // Debug logging
     console.log('=== UPDATE PRODUCT DEBUG ===');
     console.log('Product ID:', req.params.id);
@@ -31,7 +35,7 @@ router.patch(
     console.log('Files:', req.files ? (req.files as Express.Multer.File[]).map(f => f.originalname) : 'No files');
     console.log('===========================');
 
-    // Lấy dữ liệu cập nhật từ request body
+    // Lấy dữ liệu cập nhật từ request body (support title/name fallback)
     let {
       title,
       price,
@@ -55,10 +59,16 @@ router.patch(
       saleEndDate
     }: ProductAttrs = req.body;
 
-    // Parse JSON strings back to objects/arrays if they come from FormData
+    // Parse JSON strings back to objects/arrays if they come from FormData or proxy JSON
     try {
+      if (typeof req.body.images === 'string') {
+        req.body.images = JSON.parse(req.body.images);
+      }
       if (typeof specifications === 'string') {
         specifications = JSON.parse(specifications);
+      }
+      if (typeof reviews === 'string') {
+        reviews = JSON.parse(reviews);
       }
       if (typeof variants === 'string') {
         variants = JSON.parse(variants);

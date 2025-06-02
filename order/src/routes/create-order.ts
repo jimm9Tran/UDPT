@@ -1,6 +1,7 @@
 import express, { type Request, type Response } from 'express';
-import { body } from 'express-validator';
+import { body, validationResult } from 'express-validator';
 import mongoose from 'mongoose';
+import axios from 'axios';
 import {
   NotFoundError,
   OrderStatus,
@@ -19,97 +20,109 @@ const router = express.Router();
 
 const EXPIRATION_WINDOW_SECONDS = 30 * 60;
 
+// Custom middleware to log validation errors
+const logValidationErrors = (req: Request, res: Response, next: Function) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    console.log('❌ Validation errors detected:');
+    console.log(JSON.stringify(errors.array(), null, 2));
+  }
+  next();
+};
+
 router.post(
   '/api/orders',
-  requireAuth,
-  [
+  requireAuth,  [
     body('cart')
-      .not()
-      .isEmpty()
-      .withMessage('Giỏ hàng không được để trống'),
-    body('shippingAddress')
-      .not()
-      .isEmpty()
-      .withMessage('Địa chỉ giao hàng không được để trống'),
+      .isArray({ min: 1 })
+      .withMessage('Cart must be a non-empty array'),
     body('paymentMethod')
-      .not()
-      .isEmpty()
-      .withMessage('Phương thức thanh toán không được để trống')
+      .notEmpty()
+      .withMessage('Payment method is required'),
+    body('shippingAddress')
+      .notEmpty()
+      .withMessage('Shipping address is required')
   ],
-  validateRequest,  async (req: Request, res: Response) => {
+  logValidationErrors,
+  validateRequest,
+  async (req: Request, res: Response) => {
+    console.log('🔍 Order creation request received');
+    console.log('📋 Request body:', JSON.stringify(req.body, null, 2));
+    console.log('👤 Current user:', req.currentUser);
+    
     const { cart, shippingAddress, paymentMethod }: Partial<OrderAttrs> = req.body;
 
     // Calculate an expiration date for this order
     const expiration = new Date();
-    expiration.setSeconds(expiration.getSeconds() + EXPIRATION_WINDOW_SECONDS);    if (cart == null) {
-      throw new Error('Giỏ hàng đang trống');
-    } else if (paymentMethod == null) {
+    expiration.setSeconds(expiration.getSeconds() + EXPIRATION_WINDOW_SECONDS);
+
+    if (cart == null) {
+      throw new Error('Giỏ hàng đang trống');    } else if (paymentMethod == null) {
       throw new Error('Bạn chưa chọn phương thức thanh toán');
-    }
+    }    try {
+      console.log('🔄 Starting order creation');
+      console.log('📦 Cart items:', JSON.stringify(cart, null, 2));
 
-    // Start MongoDB transaction to ensure atomicity
-    const session = await mongoose.startSession();
-
-    try {
-      await session.withTransaction(async () => {
-        // Validate and reserve products in cart using optimistic locking
-        for (let i = 0; i < cart.length; i++) {
-          const cartItem = cart[i];
+      // First, validate all products and check inventory via Product service API
+      const productServiceUrl = process.env.PRODUCT_SERVICE_URL || 'http://product-service:3000';
+      
+      for (let i = 0; i < cart.length; i++) {
+        const cartItem = cart[i];
+        console.log(`🔍 Validating cart item ${i + 1}:`, cartItem);
+        
+        try {
+          // Check if product exists and has enough stock
+          const productResponse = await axios.get(`${productServiceUrl}/api/products/${cartItem.productId}`);
+          const product = productResponse.data;
           
-          // Find the product with session for transaction
-          const existedProduct = await Product.findById(cartItem.productId).session(session);          // If product doesn't exist, throw an error
-          if (existedProduct == null) {
-            throw new NotFoundError();
-          }
-
-          // Check if product is already reserved
-          if (existedProduct.isReserved) {
-            throw new Error(`${existedProduct.title} đã được đặt trước, không thể mua tiếp`);
-          }
+          console.log('🔍 Found product:', product.title);
 
           // Check if there's enough stock
-          if (existedProduct.countInStock < cartItem.qty) {
-            throw new Error(`${existedProduct.title} chỉ còn ${existedProduct.countInStock} sản phẩm, không đủ số lượng yêu cầu (${cartItem.qty})`);
+          if (product.countInStock < cartItem.qty) {
+            throw new BadRequestError(`${product.title} chỉ còn ${product.countInStock} sản phẩm, không đủ số lượng yêu cầu (${cartItem.qty})`);
           }
 
-          // Additional check: make sure product is still available
-          if (existedProduct.countInStock <= 0) {
-            throw new Error(`${existedProduct.title} đã hết hàng`);
+          // Check if product is available
+          if (product.countInStock <= 0) {
+            throw new BadRequestError(`${product.title} đã hết hàng`);
           }
 
-          // Reserve the product using atomic operation with optimistic locking
-          const newCountInStock = existedProduct.countInStock - cartItem.qty;
-          const shouldReserve = newCountInStock === 0; // Reserve only if completely out of stock
-
-          // Use findOneAndUpdate with version check to prevent race conditions
-          const updatedProduct = await Product.findOneAndUpdate(
-            { 
-              _id: existedProduct._id, 
-              version: existedProduct.version, // Optimistic concurrency control
-              countInStock: { $gte: cartItem.qty }, // Double-check stock availability
-              isReserved: false // Make sure it's not already reserved
-            },
-            {
-              $inc: { countInStock: -cartItem.qty },
-              $set: { 
-                isReserved: shouldReserve,
-                orderId: shouldReserve ? 'pending' : undefined,
-                // Add timestamp for reservation tracking
-                reservedAt: shouldReserve ? new Date() : undefined,
-                reservedBy: shouldReserve ? req.currentUser!.id : undefined
-              }
-            },
-            { 
-              new: true, 
-              session 
-            }
-          );          if (!updatedProduct) {
-            throw new Error(`${existedProduct.title} đã được người khác mua hoặc đã cập nhật. Vui lòng thử lại.`);
+        } catch (error) {
+          if (axios.isAxiosError(error) && error.response?.status === 404) {
+            console.log('❌ Product not found:', cartItem.productId);
+            throw new NotFoundError();
           }
-
-          console.log(`✅ Successfully reserved ${cartItem.qty} of ${existedProduct.title}, remaining stock: ${newCountInStock}`);
+          throw error;
         }
+      }
 
+      // Reserve inventory for all products via Product service API
+      console.log(`🔒 Reserving inventory for ${cart.length} products`);
+      
+      // Format cart items for the product service API
+      const items = cart.map(cartItem => ({
+        productId: cartItem.productId,
+        quantity: cartItem.qty
+      }));
+      
+      let reservationId: string;
+      
+      try {
+        const reservationResponse = await axios.post(`${productServiceUrl}/api/products/reserve-inventory`, {
+          items
+        });
+        
+        reservationId = reservationResponse.data.reservationId;
+        console.log(`✅ Reserved inventory for all products with reservation ID: ${reservationId}`);
+      } catch (error) {
+        console.log('❌ Inventory reservation failed:', error);
+        if (axios.isAxiosError(error) && error.response?.data) {
+          throw new BadRequestError(`Inventory reservation failed: ${error.response.data.message || 'Unknown error'}`);
+        }
+        throw new BadRequestError('Failed to reserve inventory');
+      }
+
+      try {
         // Calculate discount factor
         const shippingDiscount = 1;
 
@@ -122,7 +135,7 @@ router.post(
         const taxPrice = 0.07 * itemsPrice;
         const totalPrice = itemsPrice + shippingPrice + taxPrice;
 
-        // Build the order and save it to the database within transaction
+        // Build the order and save it to the database
         const order = Order.build({
           userId: req.currentUser!.id,
           status: OrderStatus.Created,
@@ -136,7 +149,8 @@ router.post(
           totalPrice: parseFloat(totalPrice.toFixed(2))
         });
 
-        await order.save({ session });
+        await order.save();
+        console.log(`✅ Order created: ${order.id}`);
 
         // Publish an event saying that an order was created
         await new OrderCreatedPublisher(natsWrapper.client).publish({
@@ -157,11 +171,25 @@ router.post(
 
         // Send response
         res.status(201).send(order);
-      });
+
+      } catch (orderError) {
+        // If order creation fails, release the reservation
+        console.log('❌ Order creation failed, releasing reservation');
+        try {
+          await axios.post(`${productServiceUrl}/api/products/release-inventory`, {
+            reservationId
+          });
+          console.log('✅ Released reservation:', reservationId);
+        } catch (releaseError) {
+          console.error('❌ Failed to release reservation:', reservationId, releaseError);
+        }
+        throw orderError;
+      }
+
     } catch (error) {
+      console.log('❌ Order creation error:', error);
+      console.log('❌ Error stack:', error instanceof Error ? error.stack : 'No stack');
       throw error;
-    } finally {
-      await session.endSession();
     }
   }
 );

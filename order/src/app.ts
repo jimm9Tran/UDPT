@@ -14,6 +14,7 @@ import { deliverOrderRouter } from './routes/deliver-order';
 import { showProductRouter } from './routes/show-product';
 import { healthRouter } from './routes/health';
 import { adminOrderRouter } from './routes/admin-orders';
+import { testOrderRouter } from './routes/test-route';
 
 const app = express();
 app.set('trust proxy', true);
@@ -32,6 +33,7 @@ app.use(
 );
 app.use(currentUser);
 
+console.log('🔧 Registering routes...');
 app.use(showProductRouter);
 app.use(showMyOrderRouter);
 app.use(getOrderRouter);
@@ -39,8 +41,10 @@ app.use(deliverOrderRouter);
 app.use(cancelOrderRouter);
 app.use(showAllOrderRouter);
 app.use(createOrderRouter);
+console.log('✅ createOrderRouter registered');
 app.use(healthRouter);
 app.use(adminOrderRouter);
+app.use(testOrderRouter);
 
 app.all('*', async (req, res) => {
   throw new NotFoundError();

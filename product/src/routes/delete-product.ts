@@ -17,8 +17,8 @@ const router = express.Router();
 
 router.delete(
   '/api/products/:productId',
-  // requireAuth,  // Temporarily disabled for testing
-  // adminUser,    // Temporarily disabled for testing
+  requireAuth,
+  adminUser,
   [param('productId').isMongoId().withMessage('Invalid MongoDB ObjectId')],
   validateRequest,
   async (req: Request, res: Response) => {

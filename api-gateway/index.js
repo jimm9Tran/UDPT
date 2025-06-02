@@ -128,11 +128,12 @@ const createProxyOptions = (target) => ({
 });
 
 // Route handlers using http-proxy-middleware
-app.use('/api/users', createProxyMiddleware(createProxyOptions(services.user)));
-app.use('/api/products', createProxyMiddleware(createProxyOptions(services.product)));
-app.use('/api/bestsellers', createProxyMiddleware(createProxyOptions(services.product)));
-app.use('/api/orders', createProxyMiddleware(createProxyOptions(services.order)));
-app.use('/api/payments', createProxyMiddleware(createProxyOptions(services.payment)));
+app.use('/api/users', createProxyMiddleware('/api/users', createProxyOptions(services.user)));
+app.use('/api/products', createProxyMiddleware('/api/products', createProxyOptions(services.product)));
+app.use('/api/bestsellers', createProxyMiddleware('/api/bestsellers', createProxyOptions(services.product)));
+// Note: Product service handles bestsellers too
+app.use('/api/orders', createProxyMiddleware('/api/orders', createProxyOptions(services.order)));
+app.use('/api/payments', createProxyMiddleware('/api/payments', createProxyOptions(services.payment)));
 
 // Fallback route
 app.use('*', (req, res) => {
