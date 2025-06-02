@@ -1,6 +1,4 @@
-# 🛍️ E-commerce Microservices System
-
-## 🎉 Demo Ready - Complete E-commerce Platform
+# 🛍️ Jimm9-Shop Microservices System
 
 A fully functional e-commerce system built with microservices architecture, featuring React frontend, Node.js/TypeScript backend services, and comprehensive payment integration.
 
