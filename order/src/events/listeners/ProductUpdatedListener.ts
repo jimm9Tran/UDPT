@@ -7,9 +7,8 @@ import { Product } from '../../models/product';
 
 // Listener xử lý sự kiện ProductUpdated
 export class ProductUpdatedListener extends Listener<ProductUpdatedEvent> {
-  // Khóa sự kiện và queue group cho order-service
-  subject: Subjects.ProductUpdated = Subjects.ProductUpdated;
-  queueGroupName = QueueGroupNames.ORDER_SERVICE;
+  readonly subject = Subjects.ProductUpdated as const;
+  queueGroupName = QueueGroupNames.OrderService;
 
   // Hàm gọi khi nhận message từ NATS
   async onMessage(
@@ -29,19 +28,25 @@ export class ProductUpdatedListener extends Listener<ProductUpdatedEvent> {
       );
       msg.ack();
       return;
-    }
-
-    // Cập nhật các trường cần thay đổi
+    }    // Cập nhật các trường cần thay đổi
     product.set({
       title: data.title,
       price: data.price,
-      image: data.image,
-      colors: data.colors,
-      sizes: data.sizes,
+      originalPrice: data.originalPrice,
+      images: data.images,
+      description: data.description,
+      brand: data.brand,
+      category: data.category,
+      specifications: data.specifications,
+      variants: data.variants,
       countInStock: data.countInStock,
+      reservedQuantity: data.reservedQuantity,
       numReviews: data.numReviews,
       rating: data.rating,
-      isReserved: data.isReserved
+      reservations: data.reservations,
+      isReserved: data.isReserved,
+      isActive: data.isActive,
+      isFeatured: data.isFeatured
     });
 
     // Lưu vào database (version sẽ tự tăng nhờ plugin)

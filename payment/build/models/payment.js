@@ -15,12 +15,12 @@ const paymentSchema = new mongoose_1.default.Schema({
     },
     stripeId: {
         type: String,
-        required: true
+        required: false // Not required for COD
     },
     vnpayTxnRef: {
         type: String,
-        required: true,
-        unique: true
+        required: false, // Not required for COD
+        sparse: true // Allow multiple null values
     },
     vnpayTransactionNo: {
         type: String,
@@ -39,7 +39,8 @@ const paymentSchema = new mongoose_1.default.Schema({
     paymentMethod: {
         type: String,
         required: true,
-        default: 'VNPay'
+        enum: Object.values(payment_1.PaymentMethod),
+        default: payment_1.PaymentMethod.VNPay
     },
     status: {
         type: String,
@@ -62,6 +63,14 @@ const paymentSchema = new mongoose_1.default.Schema({
     paidAt: {
         type: Date,
         required: false
+    },
+    deliveryAddress: {
+        type: String,
+        required: false // For COD payments
+    },
+    phoneNumber: {
+        type: String,
+        required: false // For COD payments
     }
 }, {
     toJSON: {

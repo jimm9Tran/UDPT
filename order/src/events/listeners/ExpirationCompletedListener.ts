@@ -11,8 +11,8 @@ import { Order } from '../../models/order';
 import { OrderUpdatedPublisher } from '../publishers/OrderUpdatedPublisher';
 
 export class ExpirationCompletedListener extends Listener<ExpirationCompletedEvent> {
-  subject: Subjects.ExpirationCompleted = Subjects.ExpirationCompleted;
-  queueGroupName = QueueGroupNames.ORDER_SERVICE;
+  readonly subject = Subjects.ExpirationComplete as const;
+  queueGroupName = QueueGroupNames.OrderService;
 
   async onMessage (data: ExpirationCompletedEvent['data'], msg: Message): Promise<void> {
     const order = await Order.findById(data.orderId);
@@ -31,7 +31,7 @@ export class ExpirationCompletedListener extends Listener<ExpirationCompletedEve
 
     await order.save();
 
-    await new OrderUpdatedPublisher(this.client).publish({
+    await new OrderUpdatedPublisher(this.natsClient).publish({
       id: order.id,
       status: OrderStatus.Cancelled,
       userId: order.userId,

@@ -12,7 +12,7 @@ class OrderUpdatedListener extends common_1.Listener {
         // Định nghĩa subject mà listener này sẽ lắng nghe (OrderUpdated)
         this.subject = common_1.Subjects.OrderUpdated;
         // Đặt tên group cho listener này để load balancing giữa các instance
-        this.queueGroupName = common_1.QueueGroupNames.PAYMENT_SERVICE;
+        this.queueGroupName = common_1.QueueGroupNames.PaymentService;
     }
     // Hàm xử lý khi nhận được sự kiện OrderUpdated
     async onMessage(data, msg) {

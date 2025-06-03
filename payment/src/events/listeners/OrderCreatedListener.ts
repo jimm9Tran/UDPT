@@ -6,9 +6,9 @@ import { OrderInfo } from '../../models/order-info';
 
 export class OrderCreatedListener extends Listener<OrderCreatedEvent> {
   // Định nghĩa subject mà listener này sẽ lắng nghe (OrderCreated)
-  subject: Subjects.OrderCreated = Subjects.OrderCreated;
+  readonly subject = Subjects.OrderCreated as const;
   // Đặt tên group cho listener này để load balancing giữa các instance
-  queueGroupName = QueueGroupNames.PAYMENT_SERVICE;
+  queueGroupName = QueueGroupNames.PaymentService;
 
   // Hàm xử lý khi nhận được sự kiện OrderCreated
   async onMessage (data: OrderCreatedEvent['data'], msg: Message): Promise<void> {
@@ -22,8 +22,8 @@ export class OrderCreatedListener extends Listener<OrderCreatedEvent> {
       id: data.id,
       userId: data.userId,
       status: data.status,
-      totalPrice: data.totalPrice,
-      paymentMethod: data.paymentMethod,
+      totalPrice: data.totalPrice || 0,
+      paymentMethod: data.paymentMethod || 'unknown',
       version: data.version
     });
     

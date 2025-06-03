@@ -1,10 +1,17 @@
 import React, { createContext, useContext, useReducer, useCallback } from 'react';
 import { productAPI } from '../services/api';
+import { useAuth } from './AuthContext';
 
 const CartContext = createContext();
 
 const cartReducer = (state, action) => {
   switch (action.type) {
+    case 'LOAD_CART':
+      return {
+        ...state,
+        ...action.payload,
+      };
+    
     case 'ADD_ITEM':
       const existingItem = state.items.find(item => item.id === action.payload.id);
       if (existingItem) {
@@ -84,29 +91,77 @@ const cartReducer = (state, action) => {
   }
 };
 
+const getCartStorageKey = (userId) => {
+  // Use user-specific cart key, fallback to 'cart' for anonymous users
+  return userId ? `cart_${userId}` : 'cart_anonymous';
+};
+
+const getReservationStorageKey = (userId) => {
+  return userId ? `cartReservation_${userId}` : 'cartReservation_anonymous';
+};
+
+const getValidationStorageKey = (userId) => {
+  return userId ? `cartValidated_${userId}` : 'cartValidated_anonymous';
+};
+
+const loadCartFromStorage = (userId) => {
+  try {
+    const cartKey = getCartStorageKey(userId);
+    const reservationKey = getReservationStorageKey(userId);
+    const validationKey = getValidationStorageKey(userId);
+    
+    return {
+      items: JSON.parse(localStorage.getItem(cartKey)) || [],
+      reservationId: localStorage.getItem(reservationKey) || null,
+      lastValidated: parseInt(localStorage.getItem(validationKey)) || 0,
+    };
+  } catch (error) {
+    console.error('Error loading cart from storage:', error);
+    return {
+      items: [],
+      reservationId: null,
+      lastValidated: 0,
+    };
+  }
+};
+
 const initialState = {
-  items: JSON.parse(localStorage.getItem('cart')) || [],
+  items: [],
   loading: false,
   error: null,
-  reservationId: localStorage.getItem('cartReservationId') || null,
-  lastValidated: parseInt(localStorage.getItem('cartLastValidated')) || 0,
+  reservationId: null,
+  lastValidated: 0,
 };
 
 export const CartProvider = ({ children }) => {
+  const { user } = useAuth();
   const [state, dispatch] = useReducer(cartReducer, initialState);
+
+  // Load cart when user changes (login/logout)
+  React.useEffect(() => {
+    const userId = user?.id;
+    const cartData = loadCartFromStorage(userId);
+    
+    dispatch({ type: 'LOAD_CART', payload: cartData });
+  }, [user]);
 
   // Save cart to localStorage whenever it changes
   React.useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(state.items));
+    const userId = user?.id;
+    const cartKey = getCartStorageKey(userId);
+    const reservationKey = getReservationStorageKey(userId);
+    const validationKey = getValidationStorageKey(userId);
+    
+    localStorage.setItem(cartKey, JSON.stringify(state.items));
     
     if (state.reservationId) {
-      localStorage.setItem('cartReservationId', state.reservationId);
-      localStorage.setItem('cartLastValidated', state.lastValidated.toString());
+      localStorage.setItem(reservationKey, state.reservationId);
+      localStorage.setItem(validationKey, state.lastValidated.toString());
     } else {
-      localStorage.removeItem('cartReservationId');
-      localStorage.removeItem('cartLastValidated');
+      localStorage.removeItem(reservationKey);
+      localStorage.removeItem(validationKey);
     }
-  }, [state.items, state.reservationId, state.lastValidated]);
+  }, [state.items, state.reservationId, state.lastValidated, user]);
 
   const addItem = (product, quantity = 1) => {
     dispatch({

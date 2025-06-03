@@ -7,7 +7,7 @@ export interface CartAttrs {
   qty: number
   color: string
   size: string
-  image: string
+  image: string // Keep single image for cart simplicity - just use image1 from product
   price: number
   countInStock: number
   discount: number

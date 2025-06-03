@@ -59,7 +59,7 @@ router.get('/api/payments/vnpay-callback', async (req, res) => {
             await new PaymentCreatedPublisher_1.PaymentCreatedPublisher(NatsWrapper_1.natsWrapper.client).publish({
                 id: payment.id,
                 orderId: payment.orderId,
-                stripeId: payment.stripeId
+                stripeId: payment.stripeId || ''
             });
             console.log(`Thanh toán thành công cho đơn hàng ${payment.orderId}, payment ID: ${payment.id}`);
         }
@@ -118,7 +118,7 @@ router.post('/api/payments/vnpay-ipn', async (req, res) => {
             await new PaymentCreatedPublisher_1.PaymentCreatedPublisher(NatsWrapper_1.natsWrapper.client).publish({
                 id: payment.id,
                 orderId: payment.orderId,
-                stripeId: payment.stripeId
+                stripeId: payment.stripeId || ''
             });
             console.log(`IPN: Thanh toán thành công cho đơn hàng ${payment.orderId}, payment ID: ${payment.id}`);
         }

@@ -110,6 +110,19 @@ const productSchema = new mongoose.Schema<ProductDoc, ProductModel>(
       default: 0,
       min: 0
     },
+    reservedQuantity: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0
+    },
+    reservations: [{
+      reservationId: { type: String, required: true },
+      quantity: { type: Number, required: true },
+      userId: { type: String },
+      reservedAt: { type: Date, default: Date.now },
+      expiresAt: { type: Date, required: true }
+    }],
     isReserved: {
       type: Boolean,
       required: true,
@@ -118,7 +131,7 @@ const productSchema = new mongoose.Schema<ProductDoc, ProductModel>(
     orderId: {
       type: String
     },
-    // Reservation tracking fields
+    // Legacy reservation tracking fields (for backward compatibility)
     reservedAt: {
       type: Date
     },

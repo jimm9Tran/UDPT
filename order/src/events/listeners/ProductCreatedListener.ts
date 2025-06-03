@@ -9,35 +9,43 @@ import {
 import { Product } from '../../models/product';
 
 export class ProductCreatedListener extends Listener<ProductCreatedEvent> {
-  subject: Subjects.ProductCreated = Subjects.ProductCreated;
-  queueGroupName = QueueGroupNames.ORDER_SERVICE;
-
+  readonly subject = Subjects.ProductCreated as const;
+  queueGroupName = QueueGroupNames.OrderService;
   async onMessage (data: ProductCreatedEvent['data'], msg: Message): Promise<void> {
     const {
       id,
       title,
       price,
       userId,
-      image,
-      colors,
-      sizes,
+      images,
+      description,
+      brand,
+      category,
+      specifications,
+      variants,
       countInStock,
       numReviews,
-      rating
-    } = data;
-
-    const product = Product.build({
+      rating,
+      reservations
+    } = data;    const product = Product.build({
       id,
       title,
       price,
       userId,
-      image,
-      colors,
-      sizes,
+      images,
+      description,
+      brand,
+      category,
+      specifications,
+      variants,
       countInStock,
       numReviews,
       rating,
-      isReserved: false
+      reservations,
+      reservedQuantity: data.reservedQuantity || 0,
+      isReserved: false,
+      isActive: data.isActive !== false,
+      isFeatured: data.isFeatured || false
     });
     await product.save();
 

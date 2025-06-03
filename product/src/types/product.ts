@@ -34,6 +34,14 @@ export interface VariantInterface {
   sku?: string
 }
 
+export interface ReservationInterface {
+  reservationId: string
+  quantity: number
+  userId?: string
+  reservedAt: Date
+  expiresAt: Date
+}
+
 // Electronics categories
 export type ElectronicsCategory = 
   | 'smartphone' 
@@ -97,7 +105,9 @@ export interface ProductAttrs {
   numReviews: number
   rating: number
   countInStock: number
-  isReserved: boolean
+  reservedQuantity?: number
+  reservations?: ReservationInterface[]
+  isReserved?: boolean // Keep for backward compatibility
   reservedAt?: Date
   reservedBy?: string
   tags?: string[]
@@ -132,7 +142,9 @@ export interface ProductDoc extends mongoose.Document {
   numReviews: number
   rating: number
   countInStock: number
-  isReserved: boolean
+  reservedQuantity: number
+  reservations: ReservationInterface[]
+  isReserved: boolean // Keep for backward compatibility
   orderId?: string
   reservedAt?: Date
   reservedBy?: string

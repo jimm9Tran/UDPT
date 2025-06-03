@@ -14,7 +14,7 @@ import { ImageUploadUtil } from '../utils/image-upload';
 const router = express.Router();
 
 router.patch(
-  '/api/products/:id',
+  '/products/:id',
   requireAuth,
   adminUser,
   conditionalUploadImages,

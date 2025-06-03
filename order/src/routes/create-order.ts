@@ -32,7 +32,8 @@ const logValidationErrors = (req: Request, res: Response, next: Function) => {
 
 router.post(
   '/api/orders',
-  requireAuth,  [
+  requireAuth,
+  [
     body('cart')
       .isArray({ min: 1 })
       .withMessage('Cart must be a non-empty array'),
@@ -54,15 +55,16 @@ router.post(
 
     // Calculate an expiration date for this order
     const expiration = new Date();
-    expiration.setSeconds(expiration.getSeconds() + EXPIRATION_WINDOW_SECONDS);
-
-    if (cart == null) {
-      throw new Error('Giỏ hàng đang trống');    } else if (paymentMethod == null) {
+    expiration.setSeconds(expiration.getSeconds() + EXPIRATION_WINDOW_SECONDS);    if (cart == null) {
+      throw new Error('Giỏ hàng đang trống');
+    } else if (paymentMethod == null) {
       throw new Error('Bạn chưa chọn phương thức thanh toán');
-    }    try {
+    }
+    
+    try {
       console.log('🔄 Starting order creation');
       console.log('📦 Cart items:', JSON.stringify(cart, null, 2));
-
+      
       // First, validate all products and check inventory via Product service API
       const productServiceUrl = process.env.PRODUCT_SERVICE_URL || 'http://product-service:3000';
       

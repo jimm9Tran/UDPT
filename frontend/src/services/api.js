@@ -166,10 +166,14 @@ export const orderAPI = {
   create: (orderData) => api.post('/orders', orderData),
   getMyOrders: () => api.get('/orders/my-orders'),
   getById: (id) => api.get(`/orders/${id}`),
-  getAllOrders: () => api.get('/orders/all'),
+  getAllOrders: (params = {}) => {
+    const queryString = new URLSearchParams(params).toString();
+    return api.get(`/orders/admin${queryString ? `?${queryString}` : ''}`);
+  },
   cancel: (id) => api.put(`/orders/${id}/cancel`),
   deliver: (id) => api.put(`/orders/deliver/${id}`),
-  updateStatus: (id, status) => api.put(`/orders/${id}/status`, { status }),
+  updateStatus: (id, status) => api.patch(`/orders/${id}/status`, { status }),
+  bulkUpdateStatus: (orderIds, status) => api.patch('/orders/bulk-status', { orderIds, status }),
   completeOrder: (id) => api.put(`/orders/${id}/complete`),
   getOrderEvents: (id) => api.get(`/orders/${id}/events`),
   reserveInventory: (items) => api.post('/orders/reserve-inventory', { items }),

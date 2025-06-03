@@ -22,16 +22,42 @@ router.post(
   async (req: Request, res: Response) => {
     const { reservationId } = req.body;
     
-    // Start MongoDB transaction
-    const session = await mongoose.startSession();
+    // Check if we can use transactions (requires replica set)
+    let session: mongoose.ClientSession | null = null;
+    let useTransaction = false;
+    
+    // For development, we'll skip transactions and use atomic operations only
+    if (process.env.NODE_ENV === 'production') {
+      try {
+        session = await mongoose.startSession();
+        // Test if transactions work in production
+        await session.withTransaction(async () => {
+          // Empty transaction test
+        });
+        useTransaction = true;
+        console.log('✅ MongoDB transactions supported for release, using transaction mode');
+      } catch (error) {
+        console.log('⚠️  Transactions failed in production for release, falling back to atomic operations');
+        useTransaction = false;
+        if (session) {
+          await session.endSession();
+          session = null;
+        }
+      }
+    } else {
+      console.log('⚠️  Development mode: using atomic operations only for release (no transactions)');
+    }
     
     try {
-      const result = await session.withTransaction(async () => {
-        // Find all products reserved with this reservation ID
-        const reservedProducts = await Product.find({
-          isReserved: true,
-          orderId: reservationId
-        }).session(session);
+      const executeRelease = async () => {
+        // Find all products that have reservations with this reservation ID
+        const reservedProducts = useTransaction && session
+          ? await Product.find({
+              'reservations.reservationId': reservationId
+            }).session(session)
+          : await Product.find({
+              'reservations.reservationId': reservationId
+            });
 
         if (reservedProducts.length === 0) {
           return {
@@ -43,43 +69,63 @@ router.post(
         const releasedItems: any[] = [];
 
         for (const product of reservedProducts) {
-          // Calculate the quantity that was reserved (need to restore it)
-          // Since we don't store the reserved quantity, we need to get it from the original reservation
-          // For now, we'll restore the product to available state
+          // Find the specific reservation
+          const reservation = product.reservations?.find(r => r.reservationId === reservationId);
           
-          const updatedProduct = await Product.findOneAndUpdate(
-            {
-              _id: product._id,
-              version: product.version,
-              isReserved: true,
-              orderId: reservationId
-            },
-            {
-              $unset: {
-                reservedAt: 1,
-                reservedBy: 1,
-                orderId: 1
-              },
-              $set: {
-                isReserved: false
-              }
-              // Note: We're not restoring countInStock here because we need the original quantity
-              // In a production system, you'd want to store the reserved quantity separately
-            },
-            { 
-              new: true, 
-              session 
-            }
-          );
+          if (!reservation) {
+            continue;
+          }
+
+          // Remove the reservation and decrease reserved quantity
+          const updatedProduct = useTransaction && session
+            ? await Product.findOneAndUpdate(
+                {
+                  _id: product._id,
+                  'reservations.reservationId': reservationId
+                },
+                {
+                  $pull: {
+                    reservations: { reservationId: reservationId }
+                  },
+                  $inc: {
+                    reservedQuantity: -reservation.quantity,
+                    version: 1
+                  }
+                },
+                { 
+                  new: true, 
+                  session 
+                }
+              )
+            : await Product.findOneAndUpdate(
+                {
+                  _id: product._id,
+                  'reservations.reservationId': reservationId
+                },
+                {
+                  $pull: {
+                    reservations: { reservationId: reservationId }
+                  },
+                  $inc: {
+                    reservedQuantity: -reservation.quantity,
+                    version: 1
+                  }
+                },
+                { 
+                  new: true
+                }
+              );
 
           if (updatedProduct) {
             releasedItems.push({
               productId: product._id,
               title: product.title,
-              releasedAt: new Date()
+              releasedQuantity: reservation.quantity,
+              releasedAt: new Date(),
+              availableAfterRelease: updatedProduct.countInStock - (updatedProduct.reservedQuantity || 0)
             });
 
-            console.log(`✅ Released reservation for ${product.title} (reservation: ${reservationId})`);
+            console.log(`✅ Released ${reservation.quantity} units of ${product.title} (reservation: ${reservationId}). Available: ${updatedProduct.countInStock - (updatedProduct.reservedQuantity || 0)}/${updatedProduct.countInStock}`);
           }
         }
 
@@ -87,7 +133,15 @@ router.post(
           releasedItems,
           message: `Đã hủy đặt trước ${releasedItems.length} sản phẩm`
         };
-      });
+      };
+
+      // Execute release with or without transaction
+      let result;
+      if (useTransaction && session) {
+        result = await session.withTransaction(executeRelease);
+      } else {
+        result = await executeRelease();
+      }
 
       res.status(200).send({
         success: true,
@@ -100,7 +154,9 @@ router.post(
       console.error('❌ Release inventory failed:', error);
       throw new BadRequestError('Không thể hủy đặt trước sản phẩm');
     } finally {
-      await session.endSession();
+      if (session) {
+        await session.endSession();
+      }
     }
   }
 );

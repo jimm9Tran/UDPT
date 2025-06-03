@@ -8,9 +8,9 @@ import { ProductUpdatedPublisher } from '../publishers/ProductUpdatedPublisher';
 
 export class OrderUpdatedListener extends Listener<OrderUpdatedEvent> {
   // Định nghĩa subject mà listener này sẽ lắng nghe (OrderUpdated)
-  subject: Subjects.OrderUpdated = Subjects.OrderUpdated;
+  readonly subject = Subjects.OrderUpdated as const;
   // Đặt tên group cho listener này để load balancing giữa các instance
-  queueGroupName = QueueGroupNames.PRODUCT_SERVICE;
+  queueGroupName = QueueGroupNames.ProductService;
 
   // Hàm xử lý khi nhận được sự kiện OrderUpdated
   async onMessage (data: OrderUpdatedEvent['data'], msg: Message): Promise<void> {
@@ -60,20 +60,36 @@ export class OrderUpdatedListener extends Listener<OrderUpdatedEvent> {
       }
 
       // Phát sự kiện ProductUpdated để các service khác đồng bộ trạng thái sản phẩm
-      await new ProductUpdatedPublisher(this.client).publish({
+      await new ProductUpdatedPublisher(this.natsClient).publish({
         id: product.id,
         title: product.title,
         price: product.price,
+        originalPrice: product.originalPrice,
         userId: product.userId,
-        image: product.images.image1,
+        images: product.images,
+        specifications: product.specifications,
+        variants: product.variants,
         brand: product.brand,
         category: product.category,
+        subCategory: product.subCategory,
         description: product.description,
+        features: product.features,
+        inTheBox: product.inTheBox,
         numReviews: product.numReviews,
         rating: product.rating,
         countInStock,
+        reservedQuantity: product.reservedQuantity,
+        reservations: product.reservations,
         isReserved: product.isReserved,
-        version: product.version
+        reservedAt: product.reservedAt,
+        reservedBy: product.reservedBy,
+        tags: product.tags,
+        isActive: product.isActive,
+        isFeatured: product.isFeatured,
+        saleEndDate: product.saleEndDate,
+        version: product.version,
+        createdAt: product.createdAt,
+        updatedAt: product.updatedAt
       });
     }
 

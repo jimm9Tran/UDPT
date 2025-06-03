@@ -9,7 +9,7 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@jimm9tran/common": "^1.0.0",
+    "@jimm9tran/common": "^1.0.5",
     "@types/bull": "^4.10.0",
     "bull": "^4.10.4",
     "dotenv": "^16.0.3",

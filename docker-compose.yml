@@ -63,6 +63,7 @@ services:
     environment:
       - NATS_CLIENT_ID=product
       - MONGO_URI=${MONGO_URI_PRODUCT}
+      - NODE_ENV=development
 
   # Order Service
   order-service:

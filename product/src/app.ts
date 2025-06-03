@@ -19,6 +19,7 @@ import { seedProductsRouter } from './routes/seed-products';
 import { reserveInventoryRouter } from './routes/reserve-inventory';
 import { releaseInventoryRouter } from './routes/release-inventory';
 import { commitInventoryRouter } from './routes/commit-inventory';
+import { cleanupExpiredReservationsRouter } from './routes/cleanup-expired-reservations';
 
 const app = express();
 app.use(json());
@@ -48,6 +49,7 @@ app.use(cleanupReservationsRouter);
 app.use(reserveInventoryRouter);
 app.use(releaseInventoryRouter);
 app.use(commitInventoryRouter);
+app.use(cleanupExpiredReservationsRouter);
 app.use(seedProductsRouter);
 app.use(healthRouter)
 

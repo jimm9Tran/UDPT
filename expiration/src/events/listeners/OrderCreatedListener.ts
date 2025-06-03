@@ -6,8 +6,8 @@ import { type Message } from 'node-nats-streaming';
 import { expirationQueue } from '../../queues/expiration-queue';
 
 export class OrderCreatedListener extends Listener<OrderCreatedEvent> {
-  subject: Subjects.OrderCreated = Subjects.OrderCreated;
-  queueGroupName = QueueGroupNames.EXPIRATION_SERVICE;
+  readonly subject = Subjects.OrderCreated as const;
+  queueGroupName = QueueGroupNames.ExpirationService;
 
   async onMessage (data: OrderCreatedEvent['data'], msg: Message): Promise<void> {
     const delay = new Date(data.expiresAt).getTime() - new Date().getTime();

@@ -15,8 +15,8 @@ const start = async () => {
     if (process.env.JWT_KEY == null) {
         throw new Error('JWT_KEY must be defined');
     }
-    if (process.env.MONGO_URI == null) {
-        throw new Error('MONGO_URI must be defined');
+    if (process.env.MONGO_URI_PAYMENT == null) {
+        throw new Error('MONGO_URI_PAYMENT must be defined');
     }
     if (process.env.NATS_CLIENT_ID == null) {
         throw new Error('NATS_CLIENT_ID must be defined');
@@ -53,7 +53,7 @@ const start = async () => {
         new OrderCreatedListener_1.OrderCreatedListener(NatsWrapper_1.natsWrapper.client).listen();
         new OrderUpdatedListener_1.OrderUpdatedListener(NatsWrapper_1.natsWrapper.client).listen();
         // Kết nối tới MongoDB
-        await mongoose_1.default.connect(process.env.MONGO_URI);
+        await mongoose_1.default.connect(process.env.MONGO_URI_PAYMENT);
         console.log('Đã kết nối tới MongoDB');
     }
     catch (err) {

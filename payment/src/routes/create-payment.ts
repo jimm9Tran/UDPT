@@ -113,7 +113,7 @@ router.post(
     if (paymentMethod === 'COD') {
       console.log('Processing COD payment...');
       
-      // Tạo COD payment record với trạng thái pending
+      // Tạo COD payment record với trạng thái completed ngay lập tức
       const payment = Payment.build({
         orderId,
         stripeId: `cod_${vnpayTxnRef}`,
@@ -121,11 +121,21 @@ router.post(
         amount,
         currency: 'VND',
         paymentMethod: PaymentMethod.COD,
-        status: PaymentStatus.Pending
+        status: PaymentStatus.Success, // COD được coi như thành công ngay
+        paidAt: new Date() // Set thời gian thanh toán
       });
 
       await payment.save();
       console.log('COD payment saved successfully');
+
+      // Publish payment completed event
+      await new PaymentCreatedPublisher(natsWrapper.client).publish({
+        id: payment.id,
+        orderId: payment.orderId,
+        stripeId: payment.stripeId
+      });
+
+      console.log(`✅ COD Payment completed for order ${orderId}, payment ID: ${payment.id}`);
 
       // COD payment không cần redirect, chỉ cần thông báo thành công
       res.status(201).send({
@@ -135,6 +145,7 @@ router.post(
         status: payment.status,
         paymentMethod: 'COD',
         vnpayTxnRef: payment.vnpayTxnRef,
+        paidAt: payment.paidAt,
         message: "Đặt hàng thành công! Bạn sẽ thanh toán khi nhận hàng (COD).",
         instructions: "Vui lòng chuẩn bị tiền mặt để thanh toán khi shipper giao hàng."
       });

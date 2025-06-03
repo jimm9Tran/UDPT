@@ -9,9 +9,8 @@ import {
 
 import { Product } from '../../models/product';
 
-export class ProductDeletedListener extends Listener<ProductDeletedEvent> {
-  subject: Subjects.ProductDeleted = Subjects.ProductDeleted;
-  queueGroupName = QueueGroupNames.ORDER_SERVICE;
+export class ProductDeletedListener extends Listener<ProductDeletedEvent> {  readonly subject = Subjects.ProductDeleted as const;
+  queueGroupName = QueueGroupNames.OrderService;
 
   async onMessage (data: ProductDeletedEvent['data'], msg: Message): Promise<void> {
     const product = await Product.findByEvent(data);

@@ -11,6 +11,7 @@ import { createCODPaymentRouter } from './routes/create-cod-payment';
 import { confirmCODPaymentRouter } from './routes/confirm-cod-payment';
 import { vnpayCallbackRouter } from './routes/vnpay-callback';
 import { getPaymentRouter } from './routes/get-payment';
+import { processPaymentRouter } from './routes/process-payment';
 import { healthRouter } from './routes/health';
 
 const app = express();
@@ -34,6 +35,7 @@ app.use(createCODPaymentRouter);
 app.use(confirmCODPaymentRouter);
 app.use(vnpayCallbackRouter);
 app.use(getPaymentRouter);
+app.use(processPaymentRouter);
 app.use(healthRouter);
 
 app.all('*', async (req: Request, res: Response) => {

@@ -13,6 +13,13 @@ class VNPayHelper {
     }
     // Tạo URL thanh toán VNPay
     createPaymentUrl(paymentData) {
+        console.log('VNPay createPaymentUrl - Input data:', paymentData);
+        console.log('VNPay createPaymentUrl - Config:', {
+            vnp_TmnCode: this.config.vnp_TmnCode,
+            vnp_Url: this.config.vnp_Url,
+            vnp_ReturnUrl: this.config.vnp_ReturnUrl,
+            vnp_HashSecret: this.config.vnp_HashSecret ? 'SET' : 'NOT SET'
+        });
         const vnp_Params = {
             vnp_Version: '2.1.0',
             vnp_Command: 'pay',
@@ -27,21 +34,31 @@ class VNPayHelper {
             vnp_IpAddr: paymentData.ipAddr,
             vnp_CreateDate: this.formatDate(new Date())
         };
+        console.log('VNPay createPaymentUrl - vnp_Params:', vnp_Params);
         // Thêm mã ngân hàng nếu có
         if (paymentData.bankCode) {
             vnp_Params.vnp_BankCode = paymentData.bankCode;
         }
+        console.log('VNPay createPaymentUrl - Before sorting params');
         // Sắp xếp tham số theo thứ tự alphabet
         const sortedParams = this.sortObject(vnp_Params);
+        console.log('VNPay createPaymentUrl - Sorted params:', sortedParams);
+        console.log('VNPay createPaymentUrl - Creating query string');
         // Tạo query string
         const signData = qs_1.default.stringify(sortedParams, { encode: false });
+        console.log('VNPay createPaymentUrl - Sign data:', signData);
+        console.log('VNPay createPaymentUrl - Creating HMAC');
         // Tạo secure hash
         const hmac = crypto_1.default.createHmac('sha512', this.config.vnp_HashSecret);
         const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
+        console.log('VNPay createPaymentUrl - Signed hash:', signed);
         // Thêm secure hash vào params
         sortedParams.vnp_SecureHash = signed;
+        console.log('VNPay createPaymentUrl - Creating final URL');
         // Tạo URL cuối cùng
-        return this.config.vnp_Url + '?' + qs_1.default.stringify(sortedParams, { encode: false });
+        const finalUrl = this.config.vnp_Url + '?' + qs_1.default.stringify(sortedParams, { encode: false });
+        console.log('VNPay createPaymentUrl - Final URL:', finalUrl);
+        return finalUrl;
     }
     // Xác thực callback từ VNPay
     verifyCallback(vnpayData) {

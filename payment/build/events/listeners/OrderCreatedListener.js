@@ -10,7 +10,7 @@ class OrderCreatedListener extends common_1.Listener {
         // Định nghĩa subject mà listener này sẽ lắng nghe (OrderCreated)
         this.subject = common_1.Subjects.OrderCreated;
         // Đặt tên group cho listener này để load balancing giữa các instance
-        this.queueGroupName = common_1.QueueGroupNames.PAYMENT_SERVICE;
+        this.queueGroupName = common_1.QueueGroupNames.PaymentService;
     }
     // Hàm xử lý khi nhận được sự kiện OrderCreated
     async onMessage(data, msg) {
@@ -23,8 +23,8 @@ class OrderCreatedListener extends common_1.Listener {
             id: data.id,
             userId: data.userId,
             status: data.status,
-            totalPrice: data.totalPrice,
-            paymentMethod: data.paymentMethod,
+            totalPrice: data.totalPrice || 0,
+            paymentMethod: data.paymentMethod || 'unknown',
             version: data.version
         });
         await orderInfo.save();

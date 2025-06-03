@@ -94,9 +94,16 @@ const Checkout = () => {
       // Create order with the reservation ID
       const orderData = {
         cart: items.map(item => ({
+          userId: user?.id || user?._id, // Add userId from authenticated user
           productId: item.id,
           qty: item.quantity,
-          price: item.price
+          title: item.title,  // Add required title field
+          price: item.price,
+          image: item.image,  // Add required image field
+          color: '',          // Add default empty color
+          size: '',           // Add default empty size
+          countInStock: item.countInStock,
+          discount: 0         // Add default discount of 0 (no discount)
         })),
         shippingAddress: shippingInfo,
         paymentMethod,

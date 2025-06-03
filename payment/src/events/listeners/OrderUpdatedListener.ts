@@ -8,9 +8,9 @@ import { OrderInfo } from '../../models/order-info';
 
 export class OrderUpdatedListener extends Listener<OrderUpdatedEvent> {
   // Định nghĩa subject mà listener này sẽ lắng nghe (OrderUpdated)
-  subject: Subjects.OrderUpdated = Subjects.OrderUpdated;
+  readonly subject = Subjects.OrderUpdated as const;
   // Đặt tên group cho listener này để load balancing giữa các instance
-  queueGroupName = QueueGroupNames.PAYMENT_SERVICE;
+  queueGroupName = QueueGroupNames.PaymentService;
 
   // Hàm xử lý khi nhận được sự kiện OrderUpdated
   async onMessage (data: OrderUpdatedEvent['data'], msg: Message): Promise<void> {
