@@ -45,8 +45,8 @@ The system follows a microservices architecture with the following core principl
 │  - Admin Panel  │    │  - CORS         │    │  - Product      │
 │  - Auth Flow    │    │  - Middleware   │    │  - Order        │
 └─────────────────┘    └─────────────────┘    │  - Payment      │
-                                               │  - Expiration   │
-                                               └─────────────────┘
+                                              │  - Expiration   │
+                                              └─────────────────┘
                               │
                               ▼
                     ┌─────────────────┐
